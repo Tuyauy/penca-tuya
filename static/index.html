@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Penca TUYA | Mundial 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+  <!-- NAV -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo" onclick="navigate('home')">
+        <img src="/static/logo-tuya-clean.png" alt="TUYA" class="nav-logo-img" />
+        <span class="logo-penca">PENCA 26</span>
+      </a>
+      <div class="nav-links" id="navLinks">
+        <a href="#" onclick="navigate('fixture')" class="nav-link">Fixture</a>
+        <a href="#" onclick="navigate('ranking')" class="nav-link">Ranking</a>
+        <a href="#" onclick="navigate('prizes')" class="nav-link">Premios</a>
+        <a href="https://tuyauy.com" target="_blank" class="nav-link">Tienda ↗</a>
+      </div>
+      <div class="nav-auth" id="navAuth">
+        <!-- Se llena con JS -->
+      </div>
+      <button class="hamburger" id="hamburger" onclick="toggleMenu()">☰</button>
+    </div>
+  </nav>
+
+  <!-- PAGES -->
+  <main id="app">
+    <!-- HOME -->
+    <div id="page-home" class="page active">
+      <!-- Hero -->
+      <section class="hero">
+        <div class="hero-bg"></div>
+        <div class="hero-content">
+          <div class="hero-badge">MUNDIAL 2026 🏆</div>
+          <div class="hero-logo-wrap">
+            <img src="/static/logo-tuya-full.jpg" alt="TUYA" class="hero-logo-img" />
+            <span class="hero-logo-penca">PENCA</span>
+          </div>
+          <p class="hero-subtitle">Pronosticá, comprá y ganá premios épicos</p>
+          <div class="hero-stats" id="heroStats">
+            <div class="stat">
+              <span class="stat-num" id="statParticipants">-</span>
+              <span class="stat-label">participantes</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num" id="statMatches">-</span>
+              <span class="stat-label">partidos jugados</span>
+            </div>
+            <div class="stat">
+              <span class="stat-num" id="statPredictions">-</span>
+              <span class="stat-label">pronósticos</span>
+            </div>
+          </div>
+          <div class="hero-cta" id="heroCta">
+            <button class="btn-primary" onclick="navigate('register')">JUGÁ GRATIS</button>
+            <button class="btn-secondary" onclick="navigate('ranking')">Ver Ranking</button>
+          </div>
+        </div>
+        <div class="hero-ball">⚽</div>
+      </section>
+
+      <!-- Cómo funciona -->
+      <section class="how-it-works">
+        <div class="container">
+          <h2 class="section-title">¿Cómo funciona?</h2>
+          <div class="steps-grid">
+            <div class="step">
+              <div class="step-icon">📝</div>
+              <h3>1. Registrate</h3>
+              <p>Creá tu cuenta gratis con tu email. Si ya compraste en TUYA, usá el mismo email.</p>
+            </div>
+            <div class="step">
+              <div class="step-icon">⚽</div>
+              <h3>2. Pronosticá</h3>
+              <p>Predecí el resultado de cada partido antes de que empiece. Acertás más, ganás más.</p>
+            </div>
+            <div class="step">
+              <div class="step-icon">🛍️</div>
+              <h3>3. Comprá en TUYA</h3>
+              <p>Cada compra en la tienda te suma 10 puntos extra — igual que embocar un partido.</p>
+            </div>
+            <div class="step">
+              <div class="step-icon">🏆</div>
+              <h3>4. Ganá</h3>
+              <p>Los 3 mejores del ranking ganan premios increíbles al finalizar el mundial.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sistema de puntos -->
+      <section class="points-system">
+        <div class="container">
+          <h2 class="section-title">Sistema de puntos</h2>
+          <div class="points-grid">
+            <div class="points-card gold">
+              <div class="points-val">10</div>
+              <div class="points-label">pts</div>
+              <p>Resultado exacto<br><small>Ej: predijiste 2-1, sale 2-1</small></p>
+            </div>
+            <div class="points-card green">
+              <div class="points-val">7</div>
+              <div class="points-label">pts</div>
+              <p>Empate correcto<br><small>Predijiste empate, hubo empate (distinto marcador)</small></p>
+            </div>
+            <div class="points-card blue">
+              <div class="points-val">5</div>
+              <div class="points-label">pts</div>
+              <p>Diferencia exacta<br><small>Ej: predijiste 2-1, sale 3-2 o 1-0</small></p>
+            </div>
+            <div class="points-card orange">
+              <div class="points-val">3</div>
+              <div class="points-label">pts</div>
+              <p>Ganador correcto<br><small>Acertaste quién gana pero no la diferencia</small></p>
+            </div>
+            <div class="points-card dark">
+              <div class="points-val">10</div>
+              <div class="points-label">pts</div>
+              <p>Compra en TUYA 🛍️<br><small>Cada compra suma igual que un resultado exacto</small></p>
+            </div>
+          </div>
+          <p class="points-note">⚡ En 16avos, 8vos, 4tos, semis y final podés predecir tiempo extra o penales si hay empate.</p>
+        </div>
+      </section>
+
+      <!-- Premios -->
+      <section class="prizes-section" id="prizes">
+        <div class="container">
+          <h2 class="section-title">Los premios</h2>
+          <div class="prizes-grid">
+            <div class="prize-card first">
+              <div class="prize-pos">🥇</div>
+              <h3>1° Puesto</h3>
+              <p class="prize-desc">Estadía un fin de semana en lugar a confirmar</p>
+            </div>
+            <div class="prize-card second">
+              <div class="prize-pos">🥈</div>
+              <h3>2° Puesto</h3>
+              <p class="prize-desc">Bodega de vinos o productos de la marca TUYA</p>
+            </div>
+            <div class="prize-card third">
+              <div class="prize-pos">🥉</div>
+              <h3>3° Puesto</h3>
+              <p class="prize-desc">Productos de la nueva colección TUYA</p>
+            </div>
+          </div>
+          <div class="prizes-cta">
+            <button class="btn-primary" onclick="navigate('register')">QUIERO PARTICIPAR</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Top 3 Ranking -->
+      <section class="top3-section">
+        <div class="container">
+          <h2 class="section-title">Top del Ranking</h2>
+          <div id="top3Container">
+            <p class="empty-state">El ranking estará disponible cuando arranque el mundial 🏟️</p>
+          </div>
+          <div style="text-align:center; margin-top:2rem">
+            <button class="btn-secondary" onclick="navigate('ranking')">Ver ranking completo</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- FIXTURE -->
+    <div id="page-fixture" class="page">
+      <div class="page-header">
+        <div class="container">
+          <h1 class="page-title">FIXTURE</h1>
+          <p>Pronosticá los resultados antes de que empiece cada partido</p>
+        </div>
+      </div>
+      <div class="container">
+        <div class="fixture-tabs" id="fixtureTabs">
+          <button class="tab-btn active" data-phase="group">Grupos</button>
+          <button class="tab-btn" data-phase="r16">16avos</button>
+          <button class="tab-btn" data-phase="qf">8vos</button>
+          <button class="tab-btn" data-phase="sf">Semis</button>
+          <button class="tab-btn" data-phase="third">3°/4°</button>
+          <button class="tab-btn" data-phase="final">Final</button>
+        </div>
+        <div id="fixtureContent" class="fixture-content">
+          <div class="loading">Cargando partidos...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RANKING -->
+    <div id="page-ranking" class="page">
+      <div class="page-header">
+        <div class="container">
+          <h1 class="page-title">RANKING</h1>
+          <p>Los mejores pronosticadores del mundial</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="userRankBanner" class="user-rank-banner" style="display:none"></div>
+        <div id="rankingContent" class="ranking-content">
+          <div class="loading">Cargando ranking...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRIZES PAGE -->
+    <div id="page-prizes" class="page">
+      <div class="page-header">
+        <div class="container">
+          <h1 class="page-title">PREMIOS</h1>
+          <p>Lo que está en juego</p>
+        </div>
+      </div>
+      <div class="container">
+        <div class="prizes-grid big">
+          <div class="prize-card first big">
+            <div class="prize-pos">🥇</div>
+            <h2>1° Puesto</h2>
+            <p class="prize-desc">Estadía un fin de semana en lugar a confirmar. Una experiencia única para arrancar el año como se merece.</p>
+          </div>
+          <div class="prize-card second big">
+            <div class="prize-pos">🥈</div>
+            <h2>2° Puesto</h2>
+            <p class="prize-desc">Una bodega de vinos seleccionada o productos exclusivos de la marca TUYA.</p>
+          </div>
+          <div class="prize-card third big">
+            <div class="prize-pos">🥉</div>
+            <h2>3° Puesto</h2>
+            <p class="prize-desc">Productos de la nueva colección TUYA — ropa original uruguaya para estrenar.</p>
+          </div>
+        </div>
+        <div style="text-align:center; margin-top: 3rem">
+          <p style="margin-bottom:1rem; color: var(--gray)">¿Todavía no jugás?</p>
+          <button class="btn-primary" onclick="navigate('register')">REGISTRATE GRATIS</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="page-register" class="page">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-logo">
+            <img src="/static/logo-tuya-clean.png" alt="TUYA" style="height:48px;margin-bottom:0.25rem" />
+            <div><span class="logo-penca">PENCA 26</span></div>
+          </div>
+          <h2>Creá tu cuenta</h2>
+          <p class="auth-sub">Usá el mismo email con el que comprás en TUYA para sumar puntos extra</p>
+          <form id="registerForm" onsubmit="handleRegister(event)">
+            <div class="form-group">
+              <label>Nombre completo</label>
+              <input type="text" id="regName" placeholder="Juan Pérez" />
+            </div>
+            <div class="form-group">
+              <label>Usuario <span class="required">*</span></label>
+              <input type="text" id="regUsername" placeholder="juanperez10" required />
+            </div>
+            <div class="form-group">
+              <label>Email <span class="required">*</span></label>
+              <input type="email" id="regEmail" placeholder="juan@email.com" required />
+              <small>Usá el mismo email de tus compras en TUYA ⚡</small>
+            </div>
+            <div class="form-group">
+              <label>Contraseña <span class="required">*</span></label>
+              <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" required />
+            </div>
+            <div id="registerError" class="form-error" style="display:none"></div>
+            <button type="submit" class="btn-primary full" id="registerBtn">UNIRME A LA PENCA</button>
+          </form>
+          <p class="auth-switch">¿Ya tenés cuenta? <a href="#" onclick="navigate('login')">Iniciá sesión</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="page-login" class="page">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-logo">
+            <img src="/static/logo-tuya-clean.png" alt="TUYA" style="height:48px;margin-bottom:0.25rem" />
+            <div><span class="logo-penca">PENCA 26</span></div>
+          </div>
+          <h2>Iniciá sesión</h2>
+          <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+              <label>Email <span class="required">*</span></label>
+              <input type="email" id="loginEmail" placeholder="juan@email.com" required />
+            </div>
+            <div class="form-group">
+              <label>Contraseña <span class="required">*</span></label>
+              <input type="password" id="loginPassword" placeholder="Tu contraseña" required />
+            </div>
+            <div id="loginError" class="form-error" style="display:none"></div>
+            <button type="submit" class="btn-primary full" id="loginBtn">ENTRAR</button>
+          </form>
+          <p class="auth-switch">¿No tenés cuenta? <a href="#" onclick="navigate('register')">Registrate gratis</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="page-profile" class="page">
+      <div class="page-header">
+        <div class="container">
+          <h1 class="page-title">MI PERFIL</h1>
+        </div>
+      </div>
+      <div class="container">
+        <div id="profileContent">
+          <div class="loading">Cargando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="page-admin" class="page">
+      <div class="page-header">
+        <div class="container">
+          <h1 class="page-title">ADMIN PANEL</h1>
+          <p>Panel de administración de la penca</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="adminContent">
+          <div class="loading">Cargando panel...</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL de predicción -->
+  <div id="predModal" class="modal" style="display:none">
+    <div class="modal-overlay" onclick="closePredModal()"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closePredModal()">✕</button>
+      <h3 id="modalTitle">Pronosticá este partido</h3>
+      <div id="modalMatchInfo" class="modal-match-info"></div>
+      <form id="predForm" onsubmit="submitPrediction(event)">
+        <div class="pred-scores">
+          <div class="pred-team">
+            <div class="pred-flag" id="predHomeFlag"></div>
+            <div class="pred-name" id="predHomeName"></div>
+            <input type="number" id="predHomeScore" min="0" max="30" value="0" class="score-input" />
+          </div>
+          <div class="pred-vs">VS</div>
+          <div class="pred-team">
+            <div class="pred-flag" id="predAwayFlag"></div>
+            <div class="pred-name" id="predAwayName"></div>
+            <input type="number" id="predAwayScore" min="0" max="30" value="0" class="score-input" />
+          </div>
+        </div>
+        <div id="knockoutOptions" style="display:none" class="knockout-options">
+          <p class="knockout-note">⚡ Si predecís empate, ¿cómo se resuelve?</p>
+          <div class="ko-resolve-options" id="koResolveOptions" style="display:none">
+            <label class="radio-option">
+              <input type="radio" name="resolve" value="et" /> Tiempo extra
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="resolve" value="pk" /> Penales
+            </label>
+          </div>
+          <div id="penaltyWinner" style="display:none" class="penalty-winner">
+            <p>¿Quién gana los penales?</p>
+            <div class="penalty-options">
+              <button type="button" class="team-btn" id="penHomeBtn" onclick="setPenaltyWinner('home')"></button>
+              <button type="button" class="team-btn" id="penAwayBtn" onclick="setPenaltyWinner('away')"></button>
+            </div>
+          </div>
+        </div>
+        <div id="predError" class="form-error" style="display:none"></div>
+        <button type="submit" class="btn-primary full" id="predBtn">GUARDAR PRONÓSTICO</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast" style="display:none"></div>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <img src="/static/logo-tuya-clean.png" alt="TUYA" style="height:28px;filter:invert(1)" />
+        <span class="logo-penca" style="font-size:0.8rem">PENCA 26</span>
+      </div>
+      <div class="footer-links">
+        <a href="https://tuyauy.com" target="_blank">tuyauy.com</a>
+        <a href="https://instagram.com/tuyauy" target="_blank">Instagram</a>
+      </div>
+      <p style="font-size:0.75rem; color:var(--gray)">© 2026 TUYA — Ropa Original Uruguaya</p>
+    </div>
+  </footer>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>

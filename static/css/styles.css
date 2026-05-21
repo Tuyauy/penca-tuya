@@ -1,14 +1,18 @@
 /* =============================================
    PENCA TUYA MUNDIAL 2026 - Styles
-   Identidad: Bold, urbano, blanco/negro con acentos
+   Identidad: TUYA + celeste Uruguay
    ============================================= */
 
 :root {
   --black: #0a0a0a;
   --white: #ffffff;
   --gray: #888;
-  --light-gray: #f5f5f5;
-  --border: #e8e8e8;
+  --light-gray: #f0f8fb;
+  --border: #d0eaf3;
+  --celeste: #4DB8D8;
+  --celeste-dark: #2A8FAD;
+  --celeste-light: #E3F5FB;
+  --celeste-mid: #1A6E8A;
   --gold: #D4AF37;
   --gold-light: #F5E17A;
   --green: #22c55e;
@@ -18,7 +22,7 @@
   --font-display: 'Playfair Display', serif;
   --font-body: 'Inter', sans-serif;
   --radius: 12px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow: 0 4px 24px rgba(77,184,216,0.10);
   --shadow-md: 0 8px 40px rgba(0,0,0,0.14);
 }
 
@@ -44,7 +48,7 @@ body {
   right: 0;
   z-index: 100;
   background: var(--black);
-  border-bottom: 1px solid #222;
+  border-bottom: 3px solid var(--celeste);
   height: 60px;
 }
 
@@ -82,7 +86,7 @@ body {
 .logo-penca {
   font-family: var(--font-display);
   font-size: 0.85rem;
-  color: var(--gold);
+  color: var(--celeste);
   letter-spacing: 3px;
 }
 
@@ -150,8 +154,9 @@ main {
   position: absolute;
   inset: 0;
   background: 
-    radial-gradient(ellipse at 70% 50%, rgba(212, 175, 55, 0.15) 0%, transparent 60%),
-    radial-gradient(ellipse at 10% 80%, rgba(212, 175, 55, 0.08) 0%, transparent 50%);
+    radial-gradient(ellipse at 70% 50%, rgba(77, 184, 216, 0.20) 0%, transparent 60%),
+    radial-gradient(ellipse at 10% 80%, rgba(77, 184, 216, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 0%, rgba(212, 175, 55, 0.08) 0%, transparent 40%);
 }
 
 .hero-content {
@@ -164,7 +169,7 @@ main {
 
 .hero-badge {
   display: inline-block;
-  background: var(--gold);
+  background: var(--celeste);
   color: var(--black);
   font-size: 0.75rem;
   font-weight: 700;
@@ -190,7 +195,7 @@ main {
 .hero-logo-penca {
   font-family: var(--font-display);
   font-size: clamp(3rem, 10vw, 7rem);
-  color: var(--gold);
+  color: var(--celeste);
   letter-spacing: 8px;
   line-height: 1;
   margin-top: -0.5rem;
@@ -273,7 +278,7 @@ main {
 }
 
 .btn-primary:hover {
-  background: var(--gold);
+  background: var(--celeste);
   transform: translateY(-1px);
 }
 
@@ -327,7 +332,7 @@ main {
 /* How it works */
 .how-it-works {
   padding: 5rem 1.5rem;
-  background: var(--light-gray);
+  background: var(--celeste-light);
 }
 
 .steps-grid {
@@ -376,7 +381,7 @@ main {
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-.points-card.gold { background: rgba(212, 175, 55, 0.15); border-color: var(--gold); }
+.points-card.gold { background: rgba(77, 184, 216, 0.15); border-color: var(--celeste); }
 .points-card.green { background: rgba(34, 197, 94, 0.1); border-color: var(--green); }
 .points-card.blue { background: rgba(59, 130, 246, 0.1); border-color: var(--blue); }
 .points-card.orange { background: rgba(249, 115, 22, 0.1); border-color: var(--orange); }
@@ -388,7 +393,7 @@ main {
   line-height: 1;
 }
 
-.points-card.gold .points-val { color: var(--gold); }
+.points-card.gold .points-val { color: var(--celeste); }
 .points-card.green .points-val { color: var(--green); }
 .points-card.blue .points-val { color: var(--blue); }
 .points-card.orange .points-val { color: var(--orange); }
@@ -474,7 +479,7 @@ main {
 /* Top 3 */
 .top3-section {
   padding: 5rem 1.5rem;
-  background: var(--light-gray);
+  background: var(--celeste-light);
 }
 
 .top3-grid {
@@ -513,7 +518,7 @@ main {
 
 /* ===== PAGE HEADERS ===== */
 .page-header {
-  background: var(--black);
+  background: linear-gradient(135deg, var(--black) 60%, var(--celeste-mid) 100%);
   color: var(--white);
   padding: 3rem 1.5rem 2rem;
 }
@@ -553,9 +558,9 @@ main {
 }
 
 .tab-btn:hover, .tab-btn.active {
-  background: var(--black);
+  background: var(--celeste-dark);
   color: var(--white);
-  border-color: var(--black);
+  border-color: var(--celeste-dark);
 }
 
 .fixture-content {
@@ -671,7 +676,7 @@ main {
 }
 
 .match-status-badge.scheduled {
-  background: var(--black);
+  background: var(--celeste-dark);
   color: var(--white);
 }
 
@@ -688,7 +693,7 @@ main {
 .pred-result.earned-0 { color: var(--red); }
 
 .predict-btn {
-  background: var(--black);
+  background: var(--celeste-dark);
   color: var(--white);
   border: none;
   padding: 0.4rem 0.9rem;
@@ -701,7 +706,7 @@ main {
   transition: all 0.2s;
 }
 
-.predict-btn:hover { background: var(--gold); color: var(--black); }
+.predict-btn:hover { background: var(--celeste); color: var(--black); }
 .predict-btn.predicted { background: transparent; border: 1px solid var(--border); color: var(--gray); }
 
 /* ===== RANKING ===== */
@@ -765,7 +770,7 @@ main {
   color: var(--gray);
 }
 
-.rank-highlight td { background: rgba(212, 175, 55, 0.08); }
+.rank-highlight td { background: rgba(77, 184, 216, 0.08); }
 
 /* ===== AUTH ===== */
 .auth-container {
@@ -774,7 +779,7 @@ main {
   align-items: center;
   justify-content: center;
   padding: 2rem 1.5rem;
-  background: var(--light-gray);
+  background: linear-gradient(160deg, var(--celeste-light) 0%, var(--white) 60%);
 }
 
 .auth-card {
@@ -833,7 +838,8 @@ main {
 }
 
 .form-group input:focus, .form-group select:focus {
-  border-color: var(--black);
+  border-color: var(--celeste-dark);
+  box-shadow: 0 0 0 3px rgba(77,184,216,0.15);
 }
 
 .form-group small {
@@ -956,11 +962,11 @@ main {
   transition: border-color 0.2s;
 }
 
-.score-input:focus { border-color: var(--black); }
+.score-input:focus { border-color: var(--celeste-dark); box-shadow: 0 0 0 3px rgba(77,184,216,0.15); }
 
 .knockout-options {
-  background: rgba(212, 175, 55, 0.08);
-  border: 1px solid rgba(212, 175, 55, 0.3);
+  background: rgba(77, 184, 216, 0.08);
+  border: 1px solid rgba(77, 184, 216, 0.3);
   border-radius: 10px;
   padding: 1rem;
   margin-bottom: 1.25rem;

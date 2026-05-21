@@ -63,3 +63,4 @@ async def catch_all(full_path: str):
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "app": "Penca TUYA Mundial 2026"}
+# force rebuild Thu May 21 15:27:12 -03 2026

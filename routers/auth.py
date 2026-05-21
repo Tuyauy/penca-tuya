@@ -92,7 +92,7 @@ async def register(req: RegisterRequest):
         "sub": str(user["id"]),
         "email": user["email"],
         "username": user["username"],
-        "is_admin": False
+        "is_admin": user.get("is_admin", False)
     })
     
     return AuthResponse(

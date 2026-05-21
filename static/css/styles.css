@@ -618,6 +618,14 @@ main {
   line-height: 1;
 }
 
+.team-flag-img {
+  width: 2rem;
+  height: 1.5rem;
+  object-fit: cover;
+  border-radius: 3px;
+  display: block;
+}
+
 .team-name {
   font-weight: 600;
   font-size: 0.95rem;

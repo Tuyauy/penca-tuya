@@ -36,12 +36,7 @@ async def get_matches(
     """Obtener todos los partidos, opcionalmente filtrados por fase y grupo"""
     sb = get_supabase()
     
-    query = sb.table("matches").select("""
-        *,
-        home_team:home_team_id(id, name, code, flag_url),
-        away_team:away_team_id(id, name, code, flag_url),
-        penalty_winner:penalty_winner_id(id, name, code)
-    """)
+    query = sb.table("matches").select("*")
     
     if phase:
         query = query.eq("phase", phase)
@@ -135,12 +130,7 @@ async def get_groups():
 async def get_match(match_id: int):
     """Obtener un partido específico"""
     sb = get_supabase()
-    result = sb.table("matches").select("""
-        *,
-        home_team:home_team_id(id, name, code, flag_url),
-        away_team:away_team_id(id, name, code, flag_url),
-        penalty_winner:penalty_winner_id(id, name, code)
-    """).eq("id", match_id).execute()
+    result = sb.table("matches").select("*").eq("id", match_id).execute()
     
     if not result.data:
         raise HTTPException(status_code=404, detail="Partido no encontrado")

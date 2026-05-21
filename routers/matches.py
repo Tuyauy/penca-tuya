@@ -38,9 +38,9 @@ async def get_matches(
     
     query = sb.table("matches").select("""
         *,
-        home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
-        away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url),
-        penalty_winner:teams!matches_penalty_winner_id_fkey(id, name, code)
+        home_team:home_team_id(id, name, code, flag_url),
+        away_team:away_team_id(id, name, code, flag_url),
+        penalty_winner:penalty_winner_id(id, name, code)
     """)
     
     if phase:
@@ -95,8 +95,8 @@ async def get_upcoming_matches(
     
     result = sb.table("matches").select("""
         *,
-        home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
-        away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url)
+        home_team:home_team_id(id, name, code, flag_url),
+        away_team:away_team_id(id, name, code, flag_url)
     """).eq("status", "scheduled").eq("predictions_locked", False).gte(
         "match_date", now
     ).order("match_date").limit(limit).execute()
@@ -137,9 +137,9 @@ async def get_match(match_id: int):
     sb = get_supabase()
     result = sb.table("matches").select("""
         *,
-        home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
-        away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url),
-        penalty_winner:teams!matches_penalty_winner_id_fkey(id, name, code)
+        home_team:home_team_id(id, name, code, flag_url),
+        away_team:away_team_id(id, name, code, flag_url),
+        penalty_winner:penalty_winner_id(id, name, code)
     """).eq("id", match_id).execute()
     
     if not result.data:

@@ -2,10 +2,9 @@
 Penca TUYA Mundial 2026 - Backend FastAPI
 """
 from fastapi import FastAPI, HTTPException, Depends, status, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import os
 from dotenv import load_dotenv
 from pathlib import Path
@@ -37,7 +36,28 @@ app.include_router(ranking.router, prefix="/api/ranking", tags=["ranking"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(purchases.router, prefix="/api/purchases", tags=["purchases"])
 
-# Servir archivos estáticos
+# Servir JS y CSS sin caché para que los cambios se apliquen siempre
+@app.get("/static/js/app.js")
+async def serve_js():
+    js_path = Path(__file__).parent / "static" / "js" / "app.js"
+    content = js_path.read_text(encoding="utf-8")
+    return Response(
+        content=content,
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
+    )
+
+@app.get("/static/css/styles.css")
+async def serve_css():
+    css_path = Path(__file__).parent / "static" / "css" / "styles.css"
+    content = css_path.read_text(encoding="utf-8")
+    return Response(
+        content=content,
+        media_type="text/css",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
+    )
+
+# Servir archivos estáticos (imágenes, etc.)
 static_path = Path(__file__).parent / "static"
 if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
@@ -47,20 +67,26 @@ if static_path.exists():
 async def root():
     html_path = Path(__file__).parent / "static" / "index.html"
     if html_path.exists():
-        return HTMLResponse(content=html_path.read_text(), status_code=200)
+        return HTMLResponse(
+            content=html_path.read_text(),
+            status_code=200,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+        )
     return HTMLResponse(content="<h1>Penca TUYA - Iniciando...</h1>", status_code=200)
 
 @app.get("/{full_path:path}", response_class=HTMLResponse)
 async def catch_all(full_path: str):
-    # No interceptar rutas de API
     if full_path.startswith("api/"):
         raise HTTPException(status_code=404)
     html_path = Path(__file__).parent / "static" / "index.html"
     if html_path.exists():
-        return HTMLResponse(content=html_path.read_text(), status_code=200)
+        return HTMLResponse(
+            content=html_path.read_text(),
+            status_code=200,
+            headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+        )
     return HTMLResponse(content="<h1>Not Found</h1>", status_code=404)
 
 @app.get("/api/health")
 async def health():
     return {"status": "ok", "app": "Penca TUYA Mundial 2026"}
-# force rebuild Thu May 21 15:27:12 -03 2026

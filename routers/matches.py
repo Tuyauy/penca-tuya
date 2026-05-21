@@ -144,3 +144,4 @@ async def get_match(match_id: int):
         raise HTTPException(status_code=404, detail="Partido no encontrado")
     
     return result.data[0]
+# Thu May 21 16:33:12 -03 2026

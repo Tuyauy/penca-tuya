@@ -192,8 +192,8 @@ function renderMatchCard(m, phase) {
   const awayTeam = m.away_team || {};
   const homeName = homeTeam.name || m.home_team_placeholder || '?';
   const awayName = awayTeam.name || m.away_team_placeholder || '?';
-  const homeFlag = teamFlag(homeTeam.code);
-  const awayFlag = teamFlag(awayTeam.code);
+  const homeFlag = teamFlagHtml(homeTeam);
+  const awayFlag = teamFlagHtml(awayTeam);
 
   const isKnockout = ['r16','qf','sf','third','final'].includes(phase);
   const isFinished = m.status === 'finished';
@@ -262,6 +262,7 @@ function renderMatchCard(m, phase) {
       </div>
       <div class="match-team away">
         <div class="team-flag">${awayFlag}</div>
+
         <div class="team-name">${escHtml(awayName)}</div>
       </div>
     </div>
@@ -281,9 +282,9 @@ function openPredModal(match) {
 
   document.getElementById('modalTitle').textContent = 'Pronosticá este partido';
   document.getElementById('modalMatchInfo').textContent = match.match_date ? formatMatchDate(match.match_date) : '';
-  document.getElementById('predHomeFlag').textContent = teamFlag(homeTeam.code);
+  document.getElementById('predHomeFlag').innerHTML = teamFlagHtml(homeTeam);
   document.getElementById('predHomeName').textContent = homeName;
-  document.getElementById('predAwayFlag').textContent = teamFlag(awayTeam.code);
+  document.getElementById('predAwayFlag').innerHTML = teamFlagHtml(awayTeam);
   document.getElementById('predAwayName').textContent = awayName;
   document.getElementById('penHomeBtn').textContent = homeName;
   document.getElementById('penAwayBtn').textContent = awayName;
@@ -973,6 +974,14 @@ function formatDate(isoStr) {
     const d = new Date(isoStr);
     return d.toLocaleDateString('es-UY', { day: 'numeric', month: 'long', year: 'numeric' });
   } catch { return isoStr; }
+}
+
+function teamFlagHtml(team) {
+  if (!team) return '🏳️';
+  if (team.flag_url) {
+    return `<img src="${team.flag_url}" alt="${escHtml(team.name || '')}" class="team-flag-img" onerror="this.replaceWith(document.createTextNode('${teamFlag(team.code)}'))" />`;
+  }
+  return teamFlag(team.code);
 }
 
 function teamFlag(code) {

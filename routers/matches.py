@@ -45,6 +45,14 @@ async def get_matches(
     
     result = query.order("match_date").execute()
     matches = result.data or []
+
+    # Join equipos manualmente
+    teams_result = sb.table("teams").select("*").execute()
+    teams_map = {t["id"]: t for t in (teams_result.data or [])}
+    for match in matches:
+        match["home_team"] = teams_map.get(match.get("home_team_id"))
+        match["away_team"] = teams_map.get(match.get("away_team_id"))
+        match["penalty_winner"] = teams_map.get(match.get("penalty_winner_id"))
     
     # Si hay usuario, agregar sus predicciones
     if user_data and matches:

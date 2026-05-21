@@ -27,6 +27,21 @@ PHASE_LABELS = {
 }
 
 
+def build_teams_map(sb) -> dict:
+    """Carga todos los equipos y devuelve un dict {id: team}"""
+    result = sb.table("teams").select("id, name, code, flag_url").execute()
+    return {t["id"]: t for t in (result.data or [])}
+
+
+def enrich_matches(matches: list, teams_map: dict) -> list:
+    """Agrega home_team y away_team anidados a cada partido"""
+    for match in matches:
+        match["home_team"] = teams_map.get(match.get("home_team_id"))
+        match["away_team"] = teams_map.get(match.get("away_team_id"))
+        match["penalty_winner"] = teams_map.get(match.get("penalty_winner_id"))
+    return matches
+
+
 @router.get("/")
 async def get_matches(
     phase: Optional[str] = None,
@@ -35,37 +50,34 @@ async def get_matches(
 ):
     """Obtener todos los partidos, opcionalmente filtrados por fase y grupo"""
     sb = get_supabase()
-    
+
+    # Traer partidos (sin join — lo hacemos manual)
     query = sb.table("matches").select("*")
-    
+
     if phase:
         query = query.eq("phase", phase)
     if group:
         query = query.eq("group_name", group)
-    
+
     result = query.order("match_date").execute()
     matches = result.data or []
 
-    # Join equipos manualmente
-    teams_result = sb.table("teams").select("*").execute()
-    teams_map = {t["id"]: t for t in (teams_result.data or [])}
-    for match in matches:
-        match["home_team"] = teams_map.get(match.get("home_team_id"))
-        match["away_team"] = teams_map.get(match.get("away_team_id"))
-        match["penalty_winner"] = teams_map.get(match.get("penalty_winner_id"))
-    
+    # Enriquecer con datos de equipos
+    teams_map = build_teams_map(sb)
+    matches = enrich_matches(matches, teams_map)
+
     # Si hay usuario, agregar sus predicciones
     if user_data and matches:
         match_ids = [m["id"] for m in matches]
         preds_result = sb.table("predictions").select("*").eq(
             "user_id", user_data["sub"]
         ).in_("match_id", match_ids).execute()
-        
+
         preds_map = {p["match_id"]: p for p in (preds_result.data or [])}
-        
+
         for match in matches:
             match["user_prediction"] = preds_map.get(match["id"])
-    
+
     # Agrupar por fase
     grouped = {}
     for match in matches:
@@ -78,10 +90,10 @@ async def get_matches(
                 "matches": []
             }
         grouped[phase_key]["matches"].append(match)
-    
+
     # Ordenar por fase
     sorted_phases = sorted(grouped.values(), key=lambda x: x["order"])
-    
+
     return {"phases": sorted_phases, "total": len(matches)}
 
 
@@ -92,20 +104,21 @@ async def get_upcoming_matches(
 ):
     """Próximos partidos disponibles para predecir"""
     sb = get_supabase()
-    
+
     from datetime import datetime, timezone
     now = datetime.now(timezone.utc).isoformat()
-    
-    result = sb.table("matches").select("""
-        *,
-        home_team:home_team_id(id, name, code, flag_url),
-        away_team:away_team_id(id, name, code, flag_url)
-    """).eq("status", "scheduled").eq("predictions_locked", False).gte(
+
+    result = sb.table("matches").select("*").eq(
+        "status", "scheduled"
+    ).eq("predictions_locked", False).gte(
         "match_date", now
     ).order("match_date").limit(limit).execute()
-    
+
     matches = result.data or []
-    
+
+    teams_map = build_teams_map(sb)
+    matches = enrich_matches(matches, teams_map)
+
     if user_data and matches:
         match_ids = [m["id"] for m in matches]
         preds_result = sb.table("predictions").select("*").eq(
@@ -114,7 +127,7 @@ async def get_upcoming_matches(
         preds_map = {p["match_id"]: p for p in (preds_result.data or [])}
         for match in matches:
             match["user_prediction"] = preds_map.get(match["id"])
-    
+
     return matches
 
 
@@ -123,14 +136,14 @@ async def get_groups():
     """Obtener todos los grupos y sus equipos"""
     sb = get_supabase()
     result = sb.table("teams").select("*").order("group_name").order("name").execute()
-    
+
     groups = {}
     for team in (result.data or []):
         g = team.get("group_name", "?")
         if g not in groups:
             groups[g] = {"group": g, "teams": []}
         groups[g]["teams"].append(team)
-    
+
     return sorted(groups.values(), key=lambda x: x["group"])
 
 
@@ -139,9 +152,12 @@ async def get_match(match_id: int):
     """Obtener un partido específico"""
     sb = get_supabase()
     result = sb.table("matches").select("*").eq("id", match_id).execute()
-    
+
     if not result.data:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
-    
-    return result.data[0]
-# Thu May 21 16:33:12 -03 2026
+
+    match = result.data[0]
+    teams_map = build_teams_map(sb)
+    match = enrich_matches([match], teams_map)[0]
+
+    return match

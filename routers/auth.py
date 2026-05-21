@@ -145,7 +145,8 @@ async def login(req: LoginRequest):
             "full_name": user["full_name"],
             "total_points": user["total_points"],
             "prediction_points": user["prediction_points"],
-            "purchase_points": user["purchase_points"]
+            "purchase_points": user["purchase_points"],
+                "is_admin": user.get("is_admin", False)
         }
     )
 

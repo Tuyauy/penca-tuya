@@ -57,6 +57,16 @@ async def serve_css():
         headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
     )
 
+@app.get("/static/tuya-logo-v3.png")
+async def serve_tuya_logo_v3():
+    img_path = Path(__file__).parent / "static" / "tuya-logo-v3.png"
+    content = img_path.read_bytes()
+    return Response(
+        content=content,
+        media_type="image/png",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
+    )
+
 @app.get("/static/tuya-logo-v2.png")
 async def serve_tuya_logo_v2():
     img_path = Path(__file__).parent / "static" / "tuya-logo-v2.png"

@@ -40,7 +40,7 @@ app.include_router(purchases.router, prefix="/api/purchases", tags=["purchases"]
 @app.get("/static/js/app.js")
 async def serve_js():
     js_path = Path(__file__).parent / "static" / "js" / "app.js"
-    content = js_path.read_text(encoding="utf-8")
+    content = js_path.read_bytes()
     return Response(
         content=content,
         media_type="application/javascript",
@@ -50,11 +50,41 @@ async def serve_js():
 @app.get("/static/css/styles.css")
 async def serve_css():
     css_path = Path(__file__).parent / "static" / "css" / "styles.css"
-    content = css_path.read_text(encoding="utf-8")
+    content = css_path.read_bytes()
     return Response(
         content=content,
         media_type="text/css",
         headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
+    )
+
+@app.get("/static/logo-penca-hero.jpg")
+async def serve_hero_img():
+    img_path = Path(__file__).parent / "static" / "logo-penca-hero.jpg"
+    content = img_path.read_bytes()
+    return Response(
+        content=content,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
+    )
+
+@app.get("/static/logo-tuya-clean.png")
+async def serve_logo_clean():
+    img_path = Path(__file__).parent / "static" / "logo-tuya-clean.png"
+    content = img_path.read_bytes()
+    return Response(
+        content=content,
+        media_type="image/png",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
+    )
+
+@app.get("/static/logo-tuya-full.jpg")
+async def serve_logo_full():
+    img_path = Path(__file__).parent / "static" / "logo-tuya-full.jpg"
+    content = img_path.read_bytes()
+    return Response(
+        content=content,
+        media_type="image/jpeg",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
     )
 
 # Servir archivos estáticos (imágenes, etc.)

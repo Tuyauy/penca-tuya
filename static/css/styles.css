@@ -177,6 +177,9 @@ main {
 
 .hero-logo-block {
   margin-bottom: 0.5rem;
+  background: #000;
+  border-radius: 16px;
+  display: inline-block;
 }
 
 .hero-text {
@@ -194,7 +197,8 @@ main {
 .hero-main-img {
   width: 100%;
   max-width: 420px;
-  filter: brightness(1.1) contrast(1.05);
+  mix-blend-mode: multiply;
+  filter: brightness(1.05) contrast(1.1);
   image-rendering: -webkit-optimize-contrast;
 }
 

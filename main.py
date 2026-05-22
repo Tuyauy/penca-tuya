@@ -57,6 +57,16 @@ async def serve_css():
         headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
     )
 
+@app.get("/static/logo-penca-hero.png")
+async def serve_hero_png():
+    img_path = Path(__file__).parent / "static" / "logo-penca-hero.png"
+    content = img_path.read_bytes()
+    return Response(
+        content=content,
+        media_type="image/png",
+        headers={"Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache"}
+    )
+
 @app.get("/static/logo-penca-hero.jpg")
 async def serve_hero_img():
     img_path = Path(__file__).parent / "static" / "logo-penca-hero.jpg"

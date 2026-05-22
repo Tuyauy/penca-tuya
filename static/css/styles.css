@@ -193,10 +193,8 @@ main {
 
 .hero-main-img {
   width: 100%;
-  max-width: 380px;
-  border-radius: 16px;
-  mix-blend-mode: screen;
-  filter: brightness(1.05) contrast(1.05);
+  max-width: 420px;
+  filter: brightness(1.1) contrast(1.05);
   image-rendering: -webkit-optimize-contrast;
 }
 

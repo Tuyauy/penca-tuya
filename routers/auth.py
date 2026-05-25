@@ -169,3 +169,51 @@ async def profile(token_data: dict = Depends(__import__('auth_utils').get_curren
     user = result.data[0]
     user.pop("password_hash", None)
     return user
+
+
+import secrets
+from datetime import datetime, timedelta
+
+_reset_tokens = {}
+
+@router.post("/forgot-password")
+async def forgot_password(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    email = data.get("email", "").strip().lower()
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        return {"message": "Si el email existe, recibirás un enlace."}
+    token = secrets.token_urlsafe(32)
+    _reset_tokens[token] = {"user_id": user.id, "expires": datetime.utcnow() + timedelta(hours=1)}
+    app_url = os.getenv("APP_URL", "https://penca-tuya-production.up.railway.app")
+    reset_link = f"{app_url}/reset-password?token={token}"
+    try:
+        resend_key = os.getenv("RESEND_API_KEY")
+        if resend_key:
+            import resend
+            resend.api_key = resend_key
+            resend.Emails.send({"from": os.getenv("RESEND_FROM_EMAIL"), "to": email, "subject": "Recuperar contraseña - Penca Tuya", "html": f"<p>Hola {user.username},</p><p><a href=\'{reset_link}\'>Resetear contraseña</a></p><p>Expira en 1 hora.</p>"})
+    except Exception as e:
+        print(f"Email error: {e}")
+    return {"message": "Si el email existe, recibirás un enlace."}
+
+@router.post("/reset-password")
+async def reset_password(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    token = data.get("token", "")
+    new_password = data.get("password", "")
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token y contraseña requeridos.")
+    token_data = _reset_tokens.get(token)
+    if not token_data:
+        raise HTTPException(status_code=400, detail="Token inválido o expirado.")
+    if datetime.utcnow() > token_data["expires"]:
+        del _reset_tokens[token]
+        raise HTTPException(status_code=400, detail="Token expirado.")
+    user = db.query(User).filter(User.id == token_data["user_id"]).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
+    user.hashed_password = pwd_context.hash(new_password)
+    db.commit()
+    del _reset_tokens[token]
+    return {"message": "Contraseña actualizada correctamente."}

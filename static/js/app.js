@@ -1010,3 +1010,57 @@ function showToast(msg, type = '') {
   toast.style.display = 'block';
   setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
+
+
+// ===== FORGOT / RESET PASSWORD =====
+async function submitForgotPassword() {
+  const btn = document.getElementById('forgotBtn');
+  const errEl = document.getElementById('forgotError');
+  const email = document.getElementById('forgotEmail').value.trim();
+  if (!email) { errEl.textContent = 'Ingresa tu email'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  errEl.textContent = '';
+  try {
+    const data = await apiFetch('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    });
+    errEl.style.color = 'var(--green)';
+    errEl.textContent = data.message || 'Si ese email esta registrado, recibiras un link en breve.';
+    btn.textContent = 'Enviado';
+  } catch (e) {
+    errEl.style.color = '';
+    errEl.textContent = e.message || 'Error al enviar. Intenta de nuevo.';
+    btn.disabled = false;
+    btn.textContent = 'Enviar link';
+  }
+}
+
+async function submitResetPassword() {
+  const btn = document.getElementById('resetBtn');
+  const errEl = document.getElementById('resetError');
+  const token = document.getElementById('resetToken').value.trim();
+  const newPassword = document.getElementById('resetNewPassword').value;
+  const confirmPassword = document.getElementById('resetConfirmPassword').value;
+  if (newPassword !== confirmPassword) { errEl.textContent = 'Las contrasenas no coinciden'; return; }
+  if (newPassword.length < 6) { errEl.textContent = 'La contrasena debe tener al menos 6 caracteres'; return; }
+  btn.disabled = true;
+  btn.textContent = 'Guardando...';
+  errEl.textContent = '';
+  try {
+    const data = await apiFetch('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, new_password: newPassword })
+    });
+    errEl.style.color = 'var(--green)';
+    errEl.textContent = data.message;
+    btn.textContent = 'Listo';
+    setTimeout(() => navigate('login'), 2000);
+  } catch (e) {
+    errEl.style.color = '';
+    errEl.textContent = e.message || 'Error. El link puede haber expirado.';
+    btn.disabled = false;
+    btn.textContent = 'Cambiar contrasena';
+  }
+}

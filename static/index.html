@@ -403,5 +403,40 @@
   </footer>
 
   <script src="/static/js/app.js?v=3"></script>
+    <!-- FORGOT PASSWORD -->
+    <div id="page-forgot-password" class="page">
+      <div class="auth-container">
+        <div class="auth-card">
+          <h2>Recuperar contraseña</h2>
+          <p style="color:var(--gray);font-size:0.9rem;margin-bottom:1rem">Ingresá tu email y te mandamos un link para crear una nueva contraseña.</p>
+          <div class="form-group">
+            <input type="email" id="forgotEmail" placeholder="juan@email.com" />
+          </div>
+          <div id="forgotError" class="form-error"></div>
+          <button class="btn-primary full" id="forgotBtn" onclick="submitForgotPassword()">Enviar link</button>
+          <p class="auth-switch"><a href="#" onclick="navigate('login')">← Volver al login</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESET PASSWORD -->
+    <div id="page-reset-password" class="page">
+      <div class="auth-container">
+        <div class="auth-card">
+          <h2>Nueva contraseña</h2>
+          <input type="hidden" id="resetToken" />
+          <div class="form-group">
+            <label>Nueva contraseña</label>
+            <input type="password" id="resetNewPassword" placeholder="Mínimo 6 caracteres" />
+          </div>
+          <div class="form-group">
+            <label>Confirmá la contraseña</label>
+            <input type="password" id="resetConfirmPassword" placeholder="Repetí tu contraseña" />
+          </div>
+          <div id="resetError" class="form-error"></div>
+          <button class="btn-primary full" id="resetBtn" onclick="submitResetPassword()">Cambiar contraseña</button>
+        </div>
+      </div>
+    </div>
 </body>
 </html>

@@ -1,7 +1,7 @@
 """
 Router de autenticación
 """
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from pydantic import BaseModel, EmailStr, validator
 from typing import Optional
 from database import get_supabase

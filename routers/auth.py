@@ -194,7 +194,7 @@ async def forgot_password(request: Request):
         import resend
         resend.api_key = os.getenv("RESEND_API_KEY")
         resend.Emails.send({
-            "from": os.getenv("RESEND_FROM_EMAIL"),
+            "from": "Penca TUYA <noreply@tuyauy.com>",
             "to": [email],
             "subject": "Recuperar contrasena - Penca Tuya",
             "html": "<p>Hola " + user["username"] + "</p><p><a href='" + reset_link + "'>Resetear</a></p><p>Expira en 1 hora.</p>"

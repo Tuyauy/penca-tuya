@@ -177,14 +177,16 @@ from datetime import datetime, timedelta
 _reset_tokens = {}
 
 @router.post("/forgot-password")
-async def forgot_password(request: Request, db: Session = Depends(get_db)):
+async def forgot_password(request: Request):
     data = await request.json()
     email = data.get("email", "").strip().lower()
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
+    sb = get_supabase()
+    res = sb.table("users").select("id, username").eq("email", email).execute()
+    if not res.data:
         return {"message": "Si el email existe, recibirás un enlace."}
     token = secrets.token_urlsafe(32)
-    _reset_tokens[token] = {"user_id": user.id, "expires": datetime.utcnow() + timedelta(hours=1)}
+    user = res.data[0]
+    _reset_tokens[token] = {"user_id": user["id"], "expires": datetime.utcnow() + timedelta(hours=1)}
     app_url = os.getenv("APP_URL", "https://penca-tuya-production.up.railway.app")
     reset_link = f"{app_url}/reset-password?token={token}"
     try:
@@ -198,7 +200,7 @@ async def forgot_password(request: Request, db: Session = Depends(get_db)):
     return {"message": "Si el email existe, recibirás un enlace."}
 
 @router.post("/reset-password")
-async def reset_password(request: Request, db: Session = Depends(get_db)):
+async def reset_password(request: Request):
     data = await request.json()
     token = data.get("token", "")
     new_password = data.get("password", "")
@@ -210,10 +212,8 @@ async def reset_password(request: Request, db: Session = Depends(get_db)):
     if datetime.utcnow() > token_data["expires"]:
         del _reset_tokens[token]
         raise HTTPException(status_code=400, detail="Token expirado.")
-    user = db.query(User).filter(User.id == token_data["user_id"]).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado.")
-    user.hashed_password = pwd_context.hash(new_password)
-    db.commit()
+    sb = get_supabase()
+    hashed = get_password_hash(new_password)
+    sb.table("users").update({"hashed_password": hashed}).eq("id", token_data["user_id"]).execute()
     del _reset_tokens[token]
     return {"message": "Contraseña actualizada correctamente."}

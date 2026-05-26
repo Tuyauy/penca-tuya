@@ -189,7 +189,7 @@ async def forgot_password(request: Request):
     user = res.data[0]
     _reset_tokens[token] = {"user_id": user["id"], "expires": datetime.utcnow() + timedelta(hours=1)}
     app_url = os.getenv("APP_URL", "https://penca-tuya-production.up.railway.app")
-    reset_link = f"{app_url}/reset-password?token={token}"
+    reset_link = f"{app_url}/#reset-password?token={token}"
     try:
         import resend
         resend.api_key = os.getenv("RESEND_API_KEY")

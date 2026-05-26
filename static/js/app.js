@@ -28,7 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Route from URL hash
-  const hash = window.location.hash.replace('#', '') || 'home';
+  const fullHash = window.location.hash.replace('#', '') || 'home';
+  const hash = fullHash.split('?')[0];
+  if (fullHash.startsWith('reset-password')) { const token = new URLSearchParams(fullHash.split('?')[1] || '').get('token'); if (token) { const el = document.getElementById('resetToken'); if (el) el.value = token; } }
   navigate(hash);
 });
 

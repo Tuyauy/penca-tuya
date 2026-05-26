@@ -191,14 +191,17 @@ async def forgot_password(request: Request):
     app_url = os.getenv("APP_URL", "https://penca-tuya-production.up.railway.app")
     reset_link = f"{app_url}/reset-password?token={token}"
     try:
-        resend_key = os.getenv("RESEND_API_KEY")
-        if resend_key:
-            import resend
-            resend.api_key = resend_key
-            resend.Emails.send({"from": os.getenv("RESEND_FROM_EMAIL"), "to": email, "subject": "Recuperar contraseña - Penca Tuya", "html": f"<p>Hola {user['username']},</p><p><a href=\'{reset_link}\'>Resetear contraseña</a></p><p>Expira en 1 hora.</p>"})
+        import resend
+        resend.api_key = os.getenv("RESEND_API_KEY")
+        resend.Emails.send({
+            "from": os.getenv("RESEND_FROM_EMAIL"),
+            "to": [email],
+            "subject": "Recuperar contrasena - Penca Tuya",
+            "html": "<p>Hola " + user["username"] + "</p><p><a href='" + reset_link + "'>Resetear</a></p><p>Expira en 1 hora.</p>"
+        })
     except Exception as e:
         print(f"Email error: {e}")
-    return {"message": "Si el email existe, recibirás un enlace."}
+        raise
 
 @router.post("/reset-password")
 async def reset_password(request: Request):

@@ -195,7 +195,7 @@ async def forgot_password(request: Request):
         if resend_key:
             import resend
             resend.api_key = resend_key
-            resend.Emails.send({"from": os.getenv("RESEND_FROM_EMAIL"), "to": email, "subject": "Recuperar contraseña - Penca Tuya", "html": f"<p>Hola {user.username},</p><p><a href=\'{reset_link}\'>Resetear contraseña</a></p><p>Expira en 1 hora.</p>"})
+            resend.Emails.send({"from": os.getenv("RESEND_FROM_EMAIL"), "to": email, "subject": "Recuperar contraseña - Penca Tuya", "html": f"<p>Hola {user['username']},</p><p><a href=\'{reset_link}\'>Resetear contraseña</a></p><p>Expira en 1 hora.</p>"})
     except Exception as e:
         print(f"Email error: {e}")
     return {"message": "Si el email existe, recibirás un enlace."}

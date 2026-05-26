@@ -30,8 +30,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // Route from URL hash
   const fullHash = window.location.hash.replace('#', '') || 'home';
   const hash = fullHash.split('?')[0];
-  if (fullHash.startsWith('reset-password')) { const token = new URLSearchParams(fullHash.split('?')[1] || '').get('token'); if (token) { const el = document.getElementById('resetToken'); if (el) el.value = token; } }
-  navigate(hash);
+  window._resetToken = fullHash.startsWith('reset-password') ? new URLSearchParams(fullHash.split('?')[1] || '').get('token') : null;
+    navigate(hash);
+    if (window._resetToken) { setTimeout(() => { const el = document.getElementById('resetToken'); if (el) el.value = window._resetToken; }, 100); }
 });
 
 // ===== AUTH =====

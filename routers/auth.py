@@ -181,7 +181,7 @@ async def forgot_password(request: Request):
     data = await request.json()
     email = data.get("email", "").strip().lower()
     sb = get_supabase()
-    res = sb.table("users").select("id, username").eq("email", email).execute()
+    res = sb.table("penca_users").select("id, username").eq("email", email).execute()
     if not res.data:
         return {"message": "Si el email existe, recibirás un enlace."}
     token = secrets.token_urlsafe(32)
@@ -214,6 +214,6 @@ async def reset_password(request: Request):
         raise HTTPException(status_code=400, detail="Token expirado.")
     sb = get_supabase()
     hashed = get_password_hash(new_password)
-    sb.table("users").update({"hashed_password": hashed}).eq("id", token_data["user_id"]).execute()
+    sb.table("penca_users").update({"hashed_password": hashed}).eq("id", token_data["user_id"]).execute()
     del _reset_tokens[token]
     return {"message": "Contraseña actualizada correctamente."}

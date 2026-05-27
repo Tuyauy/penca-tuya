@@ -1392,6 +1392,7 @@ main {
 .mc-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
@@ -1400,18 +1401,19 @@ main {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
+  max-width: 42%;
 }
 
 .mc-team.home {
-  justify-content: flex-end;
+  justify-content: flex-start;
   flex-direction: row;
 }
 
 .mc-team.away {
-  justify-content: flex-start;
-  flex-direction: row;
+  justify-content: flex-end;
+  flex-direction: row-reverse;
 }
 
 .mc-flag {
@@ -1435,7 +1437,7 @@ main {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 110px;
+  max-width: 100px;
 }
 
 /* Scores area in center */
@@ -1448,11 +1450,11 @@ main {
 
 .mc-score-num {
   display: inline-block;
-  font-size: 2.6rem;
-  font-weight: 800;
+  font-size: 1.4rem;
+  font-weight: 700;
   line-height: 1;
   color: #29272d;
-  min-width: 2rem;
+  min-width: 1.2rem;
   text-align: center;
 }
 

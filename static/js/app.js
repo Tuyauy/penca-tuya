@@ -383,75 +383,93 @@ function renderMatchCard(m, phase) {
   const isLive = m.status === 'live';
   const isLocked = m.predictions_locked;
 
-  // Score display
-  let scoreHtml = '';
-  if (isFinished) {
-    let scoreStr = `${m.home_score} - ${m.away_score}`;
-    if (m.extra_time) scoreStr += ' <small style="color:var(--gray)">PE</small>';
-    if (m.penalties) scoreStr += ' <small style="color:var(--gray)">PEN</small>';
-    scoreHtml = `<div class="match-score">${scoreStr}</div>`;
-  } else if (isLive) {
-    scoreHtml = `<div class="match-score">🔴 EN VIVO</div>`;
-  } else {
-    scoreHtml = `<div class="match-score" style="color:var(--gray)">vs</div>`;
-  }
-
-  // Date
+  // Date + venue
   const dateStr = m.match_date ? formatMatchDate(m.match_date) : 'Fecha a confirmar';
   const venueStr = (m.venue || m.city) ? ` · ${escHtml(m.venue || m.city)}` : '';
+  const metaLine = dateStr + venueStr;
 
-  // Status badge
-  let badge = '';
-  if (isLive) badge = '<span class="match-status-badge live">EN VIVO</span>';
-  else if (isFinished) badge = '<span class="match-status-badge finished">Finalizado</span>';
-  else badge = '<span class="match-status-badge scheduled">Próximo</span>';
-
-  // User prediction
-  let predHtml = '';
+  // User prediction scores to display
   const pred = m.user_prediction;
-  if (pred) {
-    const predStr = `${pred.predicted_home_score}-${pred.predicted_away_score}`;
-    if (pred.points_calculated) {
+  let homeScoreDisplay, awayScoreDisplay, predResultHtml = '';
+
+  if (isFinished) {
+    // Show actual result
+    homeScoreDisplay = `<span class="mc-score-num result">${m.home_score}</span>`;
+    awayScoreDisplay = `<span class="mc-score-num result">${m.away_score}</span>`;
+    // Points badge
+    if (pred && pred.points_calculated) {
       const pts = pred.points_earned;
-      const cls = `earned-${pts}`;
       const label = pts === 10 ? '🎯 Exacto' : pts === 7 ? '✅ Empate OK' : pts === 5 ? '↔️ Diferencia' : pts === 3 ? '👍 Ganador' : '❌ Perdiste';
-      predHtml = `<div class="pred-result ${cls}">${label} (${pts} pts)<br><small>Tu pronóstico: ${predStr}</small></div>`;
+      const predStr = `${pred.predicted_home_score}-${pred.predicted_away_score}`;
+      predResultHtml = `<div class="mc-pred-badge pts-${pts}">${label} <strong>${pts} pts</strong><br><small>Tu pronóstico: ${predStr}</small></div>`;
+    }
+  } else if (isLive) {
+    homeScoreDisplay = `<span class="mc-score-num live">${m.home_score ?? '?'}</span>`;
+    awayScoreDisplay = `<span class="mc-score-num live">${m.away_score ?? '?'}</span>`;
+  } else {
+    // Upcoming: show user's predicted scores or "?"
+    if (pred) {
+      homeScoreDisplay = `<span class="mc-score-num predicted">${pred.predicted_home_score}</span>`;
+      awayScoreDisplay = `<span class="mc-score-num predicted">${pred.predicted_away_score}</span>`;
     } else {
-      predHtml = `<div class="pred-result">Tu pronóstico: <strong>${predStr}</strong></div>`;
+      homeScoreDisplay = `<span class="mc-score-num empty">?</span>`;
+      awayScoreDisplay = `<span class="mc-score-num empty">?</span>`;
     }
   }
 
-  // Predict button
-  let actionHtml = '';
-  if (!isLocked && !isFinished && currentUser) {
-    const btnClass = pred ? 'predict-btn predicted' : 'predict-btn';
-    const btnLabel = pred ? '✏️ Editar' : 'Pronosticar';
-    actionHtml = `<button class="${btnClass}" onclick="openPredModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">${btnLabel}</button>`;
-  } else if (!currentUser && !isFinished && !isLocked) {
-    actionHtml = `<button class="predict-btn" onclick="navigate('register')">Registrate para pronosticar</button>`;
+  // VS / live / result separator
+  let centerSep;
+  if (isLive) {
+    centerSep = `<span class="mc-vs live-dot">🔴</span>`;
+  } else if (isFinished) {
+    centerSep = `<span class="mc-vs finished">-</span>`;
+  } else {
+    centerSep = `<span class="mc-vs">VS</span>`;
   }
 
-  return `
-    <div class="match-card ${isFinished ? 'finished' : ''} ${isLive ? 'live' : ''}">
-      <div class="match-team">
-        <div class="team-flag">${homeFlag}</div>
-        <div class="team-name">${escHtml(homeName)}</div>
-      </div>
-      <div class="match-center">
-        ${badge}
-        ${scoreHtml}
-        <div class="match-date">${dateStr}${venueStr}</div>
-        ${predHtml}
-        ${actionHtml}
-      </div>
-      <div class="match-team away">
-        <div class="team-flag">${awayFlag}</div>
+  // Action button
+  let actionHtml = '';
+  if (!isLocked && !isFinished && !isLive && currentUser) {
+    const btnLabel = pred ? '✏️ Editar' : 'Pronosticar';
+    const btnClass = pred ? 'mc-btn predicted' : 'mc-btn';
+    actionHtml = `<button class="${btnClass}" onclick="openPredModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">${btnLabel}</button>`;
+  } else if (!currentUser && !isFinished && !isLocked && !isLive) {
+    actionHtml = `<button class="mc-btn" onclick="navigate('register')">Registrate para pronosticar</button>`;
+  }
 
-        <div class="team-name">${escHtml(awayName)}</div>
+  // ET/PK note for finished KO matches
+  let etNote = '';
+  if (isFinished && isKnockout) {
+    if (m.penalties) etNote = `<span class="mc-et-note">Penales</span>`;
+    else if (m.extra_time) etNote = `<span class="mc-et-note">Tiempo extra</span>`;
+  }
+
+  const cardClass = `match-card-v2${isFinished ? ' finished' : ''}${isLive ? ' live' : ''}`;
+
+  return `
+    <div class="${cardClass}">
+      <div class="mc-row">
+        <div class="mc-team home">
+          <span class="mc-flag">${homeFlag}</span>
+          <span class="mc-name">${escHtml(homeName)}</span>
+        </div>
+        <div class="mc-scores">
+          ${homeScoreDisplay}
+          ${centerSep}
+          ${awayScoreDisplay}
+        </div>
+        <div class="mc-team away">
+          <span class="mc-name">${escHtml(awayName)}</span>
+          <span class="mc-flag">${awayFlag}</span>
+        </div>
       </div>
+      <div class="mc-meta">${metaLine}${etNote}</div>
+      ${predResultHtml}
+      ${actionHtml ? `<div class="mc-action">${actionHtml}</div>` : ''}
     </div>
   `;
 }
+
 
 // ===== PREDICTION MODAL =====
 function openPredModal(match) {

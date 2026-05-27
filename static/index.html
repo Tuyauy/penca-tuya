@@ -19,6 +19,7 @@
       </a>
       <div class="nav-links" id="navLinks">
         <a href="#" onclick="navigate('fixture')" class="nav-link">Fixture</a>
+        <a href="#" onclick="navigate('groups')" class="nav-link">Grupos</a>
         <a href="#" onclick="navigate('ranking')" class="nav-link">Ranking</a>
         <a href="#" onclick="navigate('prizes')" class="nav-link">Premios</a>
         <a href="https://tuyauy.com" target="_blank" class="nav-link">Tienda ↗</a>
@@ -47,20 +48,7 @@
             <div class="hero-badge">⚽ MUNDIAL 2026 — CANADÁ · MÉXICO · EEUU</div>
             <h1 class="hero-title">TU PENCA</h1>
             <p class="hero-subtitle">Pronosticá los resultados, comprá en la tienda<br>y ganá premios épicos este mundial</p>
-            <div class="hero-stats" id="heroStats">
-              <div class="stat">
-                <span class="stat-num" id="statParticipants">-</span>
-                <span class="stat-label">participantes</span>
-              </div>
-              <div class="stat">
-                <span class="stat-num" id="statMatches">-</span>
-                <span class="stat-label">partidos jugados</span>
-              </div>
-              <div class="stat">
-                <span class="stat-num" id="statPredictions">-</span>
-                <span class="stat-label">pronósticos</span>
-              </div>
-            </div>
+            
             <div class="hero-cta" id="heroCta">
               <button class="btn-celeste" onclick="navigate('register')">JUGÁ GRATIS</button>
               <button class="btn-outline-white" onclick="navigate('ranking')">Ver Ranking</button>
@@ -185,11 +173,11 @@
       <div class="container">
         <div class="fixture-tabs" id="fixtureTabs">
           <button class="tab-btn active" data-phase="group">Grupos</button>
-          <button class="tab-btn" data-phase="r16">16avos</button>
-          <button class="tab-btn" data-phase="qf">8vos</button>
-          <button class="tab-btn" data-phase="sf">Semis</button>
-          <button class="tab-btn" data-phase="third">3°/4°</button>
-          <button class="tab-btn" data-phase="final">Final</button>
+          <button class="tab-btn" data-phase="r16" style="display:none">16avos</button>
+          <button class="tab-btn" data-phase="qf" style="display:none">8vos</button>
+          <button class="tab-btn" data-phase="sf" style="display:none">Semis</button>
+          <button class="tab-btn" data-phase="third" style="display:none">3°/4°</button>
+          <button class="tab-btn" data-phase="final" style="display:none">Final</button>
         </div>
         <div id="fixtureContent" class="fixture-content">
           <div class="loading">Cargando partidos...</div>
@@ -442,5 +430,26 @@
         </div>
       </div>
     </div>
+
+<!-- GROUPS -->
+<div id="page-groups" class="page">
+  <div class="page-header">
+    <div class="container">
+      <h1 class="page-title">GRUPOS</h1>
+      <p>Posiciones del Mundial 2026 — Fase de grupos</p>
+    </div>
+  </div>
+  <div class="container">
+    <div id="groupsContent">
+      <div class="loading">Cargando tablas de posiciones...</div>
+    </div>
+    <div style="text-align:center;margin-top:2rem;padding-bottom:1rem">
+      <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/groups" target="_blank" class="btn-secondary" style="display:inline-block;text-decoration:none;padding:0.6rem 1.4rem">
+        Ver posiciones oficiales FIFA ↗
+      </a>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

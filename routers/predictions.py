@@ -20,6 +20,7 @@ class PredictionRequest(BaseModel):
     predicted_extra_time: Optional[bool] = False
     predicted_penalties: Optional[bool] = False
     predicted_penalty_winner_id: Optional[int] = None
+    predicted_et_winner_id: Optional[int] = None
     
     @validator('predicted_home_score', 'predicted_away_score')
     def score_non_negative(cls, v):
@@ -69,6 +70,11 @@ async def submit_prediction(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Debes indicar qué equipo gana en los penales"
                 )
+            if req.predicted_extra_time and not req.predicted_penalties and not req.predicted_et_winner_id:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Debes indicar qué equipo gana en el tiempo extra"
+                )
     
     # Verificar si ya existe una predicción
     existing = sb.table("predictions").select("id").eq(
@@ -83,6 +89,7 @@ async def submit_prediction(
         "predicted_extra_time": req.predicted_extra_time if is_knockout else False,
         "predicted_penalties": req.predicted_penalties if is_knockout else False,
         "predicted_penalty_winner_id": req.predicted_penalty_winner_id if is_knockout else None,
+        "predicted_et_winner_id": req.predicted_et_winner_id if is_knockout else None,
         "points_calculated": False,
         "points_earned": None
     }

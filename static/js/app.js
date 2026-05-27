@@ -152,83 +152,95 @@ async function loadGroups() {
   if (!container) return;
   container.innerHTML = '<div class="loading">Cargando tablas de posiciones...</div>';
 
-  // Static group standings for World Cup 2026 (fallback data)
   const staticGroups = [
     { group: 'A', teams: [
-      { name: 'Estados Unidos', code: 'USA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Panamá', code: 'PAN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Honduras', code: 'HON', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Jamaica', code: 'JAM', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'México',              code: 'MEX', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Sudáfrica',           code: 'RSA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Rep. de Corea',       code: 'KOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Chequia',             code: 'CZE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'B', teams: [
-      { name: 'Argentina', code: 'ARG', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Ecuador', code: 'ECU', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Venezuela', code: 'VEN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Chile', code: 'CHI', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Canadá',              code: 'CAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Bosnia y Herzegovina',code: 'BIH', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Catar',               code: 'QAT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Suiza',               code: 'SUI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'C', teams: [
-      { name: 'México', code: 'MEX', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Brasil', code: 'BRA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Colombia', code: 'COL', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Bolivia', code: 'BOL', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Brasil',              code: 'BRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Marruecos',           code: 'MAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Haití',               code: 'HAI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Escocia',             code: 'SCO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'D', teams: [
-      { name: 'Francia', code: 'FRA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Alemania', code: 'GER', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Portugal', code: 'POR', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Georgia', code: 'GEO', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'EE. UU.',             code: 'USA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Paraguay',            code: 'PAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Australia',           code: 'AUS', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Turquía',             code: 'TUR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'E', teams: [
-      { name: 'España', code: 'ESP', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Croacia', code: 'CRO', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Serbia', code: 'SRB', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Eslovaquia', code: 'SVK', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Alemania',            code: 'GER', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Curazao',             code: 'CUW', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Costa de Marfil',     code: 'CIV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Ecuador',             code: 'ECU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'F', teams: [
-      { name: 'Uruguay', code: 'URU', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Canadá', code: 'CAN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Marruecos', code: 'MAR', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Senegal', code: 'SEN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Países Bajos',        code: 'NED', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Japón',               code: 'JPN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Suecia',              code: 'SWE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Túnez',               code: 'TUN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'G', teams: [
-      { name: 'Inglaterra', code: 'ENG', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Países Bajos', code: 'NED', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Bélgica', code: 'BEL', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Escocia', code: 'SCO', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Bélgica',             code: 'BEL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Egipto',              code: 'EGY', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'RI de Irán',          code: 'IRN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Nueva Zelanda',       code: 'NZL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'H', teams: [
-      { name: 'Japón', code: 'JPN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Australia', code: 'AUS', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Arabia Saudita', code: 'KSA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Uzbekistán', code: 'UZB', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'España',              code: 'ESP', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Is. Cabo Verde',      code: 'CPV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Arabia Saudí',        code: 'KSA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Uruguay',             code: 'URU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'I', teams: [
-      { name: 'Turquía', code: 'TUR', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Rep. Checa', code: 'CZE', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Albania', code: 'ALB', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Polonia', code: 'POL', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Francia',             code: 'FRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Senegal',             code: 'SEN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Irak',                code: 'IRQ', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Noruega',             code: 'NOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'J', teams: [
-      { name: 'Rumania', code: 'ROU', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Austria', code: 'AUT', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Hungría', code: 'HUN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Corea del Sur', code: 'KOR', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Argentina',           code: 'ARG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Argelia',             code: 'ALG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Austria',             code: 'AUT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Jordania',            code: 'JOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'K', teams: [
-      { name: 'Irán', code: 'IRN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Irak', code: 'IRQ', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Omán', code: 'OMA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Costa Rica', code: 'CRC', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Portugal',            code: 'POR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'RD Congo',            code: 'COD', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Uzbekistán',          code: 'UZB', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Colombia',            code: 'COL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]},
     { group: 'L', teams: [
-      { name: 'El Salvador', code: 'SLV', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Trinidad y Tobago', code: 'TRI', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Sud Africa', code: 'RSA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
-      { name: 'Mali', code: 'MLI', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+      { name: 'Inglaterra',          code: 'ENG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Croacia',             code: 'CRO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Ghana',               code: 'GHA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
+      { name: 'Panamá',              code: 'PAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
     ]}
   ];
 
-  // Try to fetch live data from our backend first
+  // Extra flags for new teams not in the original teamFlag() map
+  const extraFlags = {
+    'BIH': '🇧🇦', 'QAT': '🇶🇦', 'SUI': '🇨🇭', 'HAI': '🇭🇹',
+    'PAR': '🇵🇾', 'CUW': '🇨🇼', 'CIV': '🇨🇮', 'SWE': '🇸🇪',
+    'TUN': '🇹🇳', 'EGY': '🇪🇬', 'NZL': '🇳🇿', 'CPV': '🇨🇻',
+    'NOR': '🇳🇴', 'ALG': '🇩🇿', 'JOR': '🇯🇴', 'COD': '🇨🇩',
+    'GHA': '🇬🇭'
+  };
+
+  function getFlag(code) {
+    if (extraFlags[code]) return extraFlags[code];
+    return teamFlag(code);
+  }
+
   let groups = staticGroups;
   try {
     const data = await apiFetch('/api/matches/standings');
@@ -240,13 +252,12 @@ async function loadGroups() {
   }
 
   function renderGroupTable(groupData) {
-    const rows = groupData.teams.map((t, i) => {
-      const isTop2 = i < 2;
+    const rows = groupData.teams.map((t) => {
       const gd = (t.gf || 0) - (t.ga || 0);
-      const flag = teamFlag(t.code);
-      return `<tr class="${isTop2 ? 'standings-qualify' : ''}">
-        <td>${i + 1}</td>
-        <td class="standings-team">${flag} ${escHtml(t.name)}</td>
+      const flag = getFlag(t.code);
+      return `<tr>
+        <td class="standings-flag">${flag}</td>
+        <td class="standings-team">${escHtml(t.name)}</td>
         <td>${t.p || 0}</td>
         <td>${t.w || 0}</td>
         <td>${t.d || 0}</td>
@@ -262,7 +273,7 @@ async function loadGroups() {
       <table class="standings-table">
         <thead>
           <tr>
-            <th>#</th>
+            <th></th>
             <th>Equipo</th>
             <th>PJ</th>
             <th>G</th>
@@ -280,9 +291,6 @@ async function loadGroups() {
   }
 
   const html = `
-    <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1.5rem;text-align:center">
-      Los primeros 2 de cada grupo clasifican a 16avos de final
-    </p>
     <div class="groups-grid">
       ${groups.map(g => renderGroupTable(g)).join('')}
     </div>

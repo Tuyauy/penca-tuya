@@ -186,11 +186,44 @@ async def forgot_password(request: Request):
     try:
         import resend
         resend.api_key = os.getenv("RESEND_API_KEY")
+        html_body = (
+            '<!DOCTYPE html>'
+            '<html lang="es">'
+            '<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>'
+            '<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,sans-serif;">'
+            '  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;padding:40px 0;">'
+            '    <tr><td align="center">'
+            '      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:8px;overflow:hidden;">'
+            '        <tr><td style="background:#29272d;padding:32px 40px;text-align:center;">'
+            '          <p style="margin:0;color:#ffffff;font-size:11px;letter-spacing:4px;text-transform:uppercase;">TUYA</p>'
+            '          <p style="margin:4px 0 0;color:#b1b1aa;font-size:11px;letter-spacing:3px;text-transform:uppercase;">PENCA 26</p>'
+            '        </td></tr>'
+            '        <tr><td style="padding:40px 40px 32px;">'
+            '          <p style="margin:0 0 8px;font-size:22px;font-weight:700;color:#29272d;">Recupérá tu contraseña</p>'
+            '          <p style="margin:0 0 24px;font-size:15px;color:#666;">Hola <strong>' + user["username"] + '</strong>, recibimos una solicitud para restablecer la contraseña de tu cuenta en Penca TUYA.</p>'
+            '          <p style="margin:0 0 24px;font-size:15px;color:#666;">Hacé clic en el botón para crear una nueva contraseña. El link es válido por <strong>1 hora</strong>.</p>'
+            '          <table cellpadding="0" cellspacing="0" style="margin:0 0 32px;">'
+            '            <tr><td style="background:#ff5622;border-radius:6px;">'
+            '              <a href="' + reset_link + '" style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;letter-spacing:1px;">CAMBIAR CONTRASEÑA</a>'
+            '            </td></tr>'
+            '          </table>'
+            '          <p style="margin:0;font-size:13px;color:#999;">Si no solicitaste este cambio, podés ignorar este email. Tu contraseña no será modificada.</p>'
+            '        </td></tr>'
+            '        <tr><td style="background:#f9f9f9;padding:20px 40px;border-top:1px solid #eee;text-align:center;">'
+            '          <p style="margin:0;font-size:12px;color:#999;">© 2026 TUYA — Ropa Original Uruguaya</p>'
+            '          <p style="margin:4px 0 0;font-size:12px;color:#999;"><a href="https://tuyauy.com" style="color:#ff5622;text-decoration:none;">tuyauy.com</a></p>'
+            '        </td></tr>'
+            '      </table>'
+            '    </td></tr>'
+            '  </table>'
+            '</body>'
+            '</html>'
+        )
         resend.Emails.send({
             "from": "Penca TUYA <noreply@tuyauy.com>",
             "to": [email],
-            "subject": "Recuperar contrasena - Penca Tuya",
-            "html": "<p>Hola " + user["username"] + "</p><p><a href='" + reset_link + "'>Resetear</a></p><p>Expira en 1 hora.</p>"
+            "subject": "Recupérá tu contraseña — Penca TUYA",
+            "html": html_body
         })
     except Exception as e:
         print(f"Email error: {e}")

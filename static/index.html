@@ -362,24 +362,24 @@
           </div>
         </div>
         <div id="knockoutOptions" style="display:none" class="knockout-options">
-          <!-- Step 1: Who advances? (shown when draw) -->
+          <!-- Step 1: How is it resolved? (shown on draw) -->
+          <div id="koResolveSection" style="display:none">
+            <p class="knockout-note">⚡ Empate en 90' — ¿Cómo se resuelve?</p>
+            <div class="ko-resolve-options" id="koResolveOptions">
+              <label class="radio-option">
+                <input type="radio" name="resolve" value="et" onchange="onResolveChange()" /> Tiempo extra
+              </label>
+              <label class="radio-option">
+                <input type="radio" name="resolve" value="pk" onchange="onResolveChange()" /> Penales
+              </label>
+            </div>
+          </div>
+          <!-- Step 2: Who wins? (shown after ET or PK is selected) -->
           <div id="koWinnerSection" style="display:none">
-            <p class="knockout-note">⚡ Empate en 90' — ¿Quién avanza?</p>
+            <p class="knockout-note" id="koWinnerLabel">¿Quién gana?</p>
             <div class="penalty-options">
               <button type="button" class="team-btn" id="koWinnerHomeBtn" onclick="setKoWinner('home')"></button>
               <button type="button" class="team-btn" id="koWinnerAwayBtn" onclick="setKoWinner('away')"></button>
-            </div>
-          </div>
-          <!-- Step 2: How? (shown after winner selected) -->
-          <div id="koResolutionSection" style="display:none">
-            <p class="knockout-note">¿Cómo avanza?</p>
-            <div class="ko-resolve-options" id="koResolveOptions">
-              <label class="radio-option">
-                <input type="radio" name="resolve" value="et" /> Tiempo extra
-              </label>
-              <label class="radio-option">
-                <input type="radio" name="resolve" value="pk" /> Penales
-              </label>
             </div>
           </div>
         </div>

@@ -271,10 +271,17 @@ async function loadGroups() {
     return `<div class="group-standings-card">
       <div class="group-label">Grupo ${groupData.group}</div>
       <table class="standings-table">
+        <colgroup>
+          <col class="col-flag" />
+          <col class="col-name" />
+          <col class="col-num" /><col class="col-num" /><col class="col-num" /><col class="col-num" />
+          <col class="col-num" /><col class="col-num" /><col class="col-num" />
+          <col class="col-pts" />
+        </colgroup>
         <thead>
           <tr>
             <th></th>
-            <th>Equipo</th>
+            <th class="col-name-header">Equipo</th>
             <th>PJ</th>
             <th>G</th>
             <th>E</th>

@@ -1365,8 +1365,8 @@ main {
 /* ===== GROUPS / STANDINGS ===== */
 .groups-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.25rem;
   margin-top: 1rem;
 }
 
@@ -1375,13 +1375,15 @@ main {
   border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
+  /* Ensure card doesn't impose a min-width that causes overflow */
+  min-width: 0;
 }
 
 .group-standings-card .group-label {
   background: var(--surface-2, #1a1a1a);
-  padding: 0.6rem 1rem;
+  padding: 0.5rem 0.75rem;
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   letter-spacing: 2px;
   color: var(--gold);
   margin: 0;
@@ -1391,33 +1393,41 @@ main {
 .standings-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
+  table-layout: fixed; /* key: lets us control column widths */
 }
 
+/* Column widths — flag narrow, name flexible, numbers equal */
+.standings-table col.col-flag  { width: 26px; }
+.standings-table col.col-name  { width: auto; }
+.standings-table col.col-num   { width: 26px; }
+.standings-table col.col-pts   { width: 30px; }
+
 .standings-table th {
-  padding: 0.4rem 0.5rem;
+  padding: 0.3rem 0.2rem;
   text-align: center;
   color: var(--gray);
   font-weight: 500;
+  font-size: 0.7rem;
   border-bottom: 1px solid var(--border);
   background: transparent;
+  white-space: nowrap;
 }
 
-.standings-table th:nth-child(2) {
+.standings-table th.col-name-header {
   text-align: left;
+  padding-left: 0.3rem;
 }
 
 .standings-table td {
-  padding: 0.45rem 0.5rem;
+  padding: 0.35rem 0.2rem;
   text-align: center;
   border-bottom: 1px solid rgba(255,255,255,0.04);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
-.standings-table td:nth-child(2) {
-  text-align: left;
-}
-
-.standings-table tr:last-child td {
+.standings-table tbody tr:last-child td {
   border-bottom: none;
 }
 
@@ -1425,12 +1435,20 @@ main {
   background: rgba(255,255,255,0.03);
 }
 
-.standings-qualify {
-  background: rgba(var(--green-rgb, 34,197,94), 0.05);
+.standings-flag {
+  text-align: center !important;
+  font-size: 1rem;
+  padding: 0.3rem 0.15rem !important;
+  width: 26px;
 }
 
-.standings-qualify td:first-child {
-  border-left: 3px solid var(--green, #22c55e);
+.standings-team {
+  text-align: left !important;
+  padding-left: 0.3rem !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 0; /* trick: with table-layout:fixed, this enables ellipsis */
 }
 
 .standings-pts {
@@ -1438,22 +1456,23 @@ main {
   color: var(--gold);
 }
 
-.standings-team {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 140px;
-}
-
-@media (max-width: 640px) {
+/* Mobile: tighten further */
+@media (max-width: 480px) {
   .groups-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
   .standings-table {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
   }
-  .standings-table th, .standings-table td {
-    padding: 0.35rem 0.3rem;
+  .standings-table th {
+    font-size: 0.65rem;
+    padding: 0.25rem 0.15rem;
+  }
+  .standings-table td {
+    padding: 0.3rem 0.15rem;
+  }
+  .standings-flag {
+    font-size: 0.9rem;
   }
 }
-

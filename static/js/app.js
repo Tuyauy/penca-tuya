@@ -1020,20 +1020,27 @@ async function submitForgotPassword() {
   const btn = document.getElementById('forgotBtn');
   const errEl = document.getElementById('forgotError');
   const email = document.getElementById('forgotEmail').value.trim();
-  if (!email) { errEl.textContent = 'Ingresa tu email'; return; }
+  if (!email) { errEl.style.display = 'block'; errEl.textContent = 'Ingresa tu email'; return; }
   btn.disabled = true;
   btn.textContent = 'Enviando...';
   errEl.textContent = '';
+  errEl.style.display = 'none';
   try {
     const data = await apiFetch('/api/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email })
     });
-    errEl.style.color = 'var(--green)';
+    errEl.style.display = 'block';
+    errEl.style.color = '#22c55e';
+    errEl.style.background = 'rgba(34,197,94,0.1)';
+    errEl.style.borderColor = 'rgba(34,197,94,0.3)';
     errEl.textContent = data.message || 'Si ese email esta registrado, recibiras un link en breve.';
     btn.textContent = 'Enviado';
   } catch (e) {
+    errEl.style.display = 'block';
     errEl.style.color = '';
+    errEl.style.background = '';
+    errEl.style.borderColor = '';
     errEl.textContent = e.message || 'Error al enviar. Intenta de nuevo.';
     btn.disabled = false;
     btn.textContent = 'Enviar link';
@@ -1046,22 +1053,29 @@ async function submitResetPassword() {
   const token = document.getElementById('resetToken').value.trim();
   const newPassword = document.getElementById('resetNewPassword').value;
   const confirmPassword = document.getElementById('resetConfirmPassword').value;
-  if (newPassword !== confirmPassword) { errEl.textContent = 'Las contrasenas no coinciden'; return; }
-  if (newPassword.length < 6) { errEl.textContent = 'La contrasena debe tener al menos 6 caracteres'; return; }
+  if (newPassword !== confirmPassword) { errEl.style.display = 'block'; errEl.textContent = 'Las contrasenas no coinciden'; return; }
+  if (newPassword.length < 6) { errEl.style.display = 'block'; errEl.textContent = 'La contrasena debe tener al menos 6 caracteres'; return; }
   btn.disabled = true;
   btn.textContent = 'Guardando...';
   errEl.textContent = '';
+  errEl.style.display = 'none';
   try {
     const data = await apiFetch('/api/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ token, new_password: newPassword })
     });
-    errEl.style.color = 'var(--green)';
+    errEl.style.display = 'block';
+    errEl.style.color = '#22c55e';
+    errEl.style.background = 'rgba(34,197,94,0.1)';
+    errEl.style.borderColor = 'rgba(34,197,94,0.3)';
     errEl.textContent = data.message;
     btn.textContent = 'Listo';
     setTimeout(() => navigate('login'), 2000);
   } catch (e) {
+    errEl.style.display = 'block';
     errEl.style.color = '';
+    errEl.style.background = '';
+    errEl.style.borderColor = '';
     errEl.textContent = e.message || 'Error. El link puede haber expirado.';
     btn.disabled = false;
     btn.textContent = 'Cambiar contrasena';

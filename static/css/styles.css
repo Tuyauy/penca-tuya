@@ -1362,6 +1362,235 @@ main {
   .prizes-grid.big { grid-template-columns: 1fr; }
 }
 
+/* ===== MATCH CARD V2 ===== */
+.match-card-v2 {
+  background: #fff;
+  border: 1px solid #e8e8e4;
+  border-radius: 14px;
+  padding: 1rem 1.25rem 0.85rem;
+  margin-bottom: 0.65rem;
+  color: #29272d;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  transition: box-shadow 0.15s;
+}
+
+.match-card-v2:hover {
+  box-shadow: 0 3px 12px rgba(0,0,0,0.1);
+}
+
+.match-card-v2.finished {
+  background: #f9f9f7;
+  border-color: #ddddd9;
+}
+
+.match-card-v2.live {
+  border-color: #ff5622;
+  box-shadow: 0 0 0 2px rgba(255,86,34,0.15);
+}
+
+/* Main horizontal row */
+.mc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Team sides */
+.mc-team {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.mc-team.home {
+  justify-content: flex-end;
+  flex-direction: row;
+}
+
+.mc-team.away {
+  justify-content: flex-start;
+  flex-direction: row;
+}
+
+.mc-flag {
+  font-size: 1.4rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.mc-flag img {
+  width: 1.5rem;
+  height: 1rem;
+  object-fit: cover;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.mc-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #29272d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 110px;
+}
+
+/* Scores area in center */
+.mc-scores {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.mc-score-num {
+  display: inline-block;
+  font-size: 2.6rem;
+  font-weight: 800;
+  line-height: 1;
+  color: #29272d;
+  min-width: 2rem;
+  text-align: center;
+}
+
+.mc-score-num.empty {
+  color: #b1b1aa;
+}
+
+.mc-score-num.result {
+  color: #29272d;
+}
+
+.mc-score-num.predicted {
+  color: #29272d;
+}
+
+.mc-score-num.live {
+  color: #ff5622;
+}
+
+/* VS separator */
+.mc-vs {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #ff5622;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+  padding: 0 0.1rem;
+}
+
+.mc-vs.finished {
+  color: #b1b1aa;
+  font-size: 1.2rem;
+}
+
+.mc-vs.live-dot {
+  font-size: 1rem;
+}
+
+/* Meta line: date · hour · venue */
+.mc-meta {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #888;
+  margin-top: 0.45rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ET/PK note */
+.mc-et-note {
+  display: inline-block;
+  background: #f0f0ec;
+  color: #888;
+  font-size: 0.68rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  margin-left: 0.4rem;
+  vertical-align: middle;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* Prediction result badge */
+.mc-pred-badge {
+  text-align: center;
+  font-size: 0.8rem;
+  margin-top: 0.4rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 8px;
+  background: #f5f5f2;
+  color: #29272d;
+}
+
+.mc-pred-badge.pts-10 { background: rgba(212,175,55,0.12); color: #a07c00; }
+.mc-pred-badge.pts-7  { background: rgba(34,197,94,0.1);   color: #15803d; }
+.mc-pred-badge.pts-5  { background: rgba(59,130,246,0.1);  color: #1d4ed8; }
+.mc-pred-badge.pts-3  { background: rgba(249,115,22,0.1);  color: #c2410c; }
+.mc-pred-badge.pts-0  { background: rgba(239,68,68,0.08);  color: #b91c1c; }
+
+/* Action button */
+.mc-action {
+  text-align: center;
+  margin-top: 0.6rem;
+}
+
+.mc-btn {
+  background: #29272d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.4rem 1.2rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.mc-btn:hover {
+  background: #ff5622;
+  transform: translateY(-1px);
+}
+
+.mc-btn.predicted {
+  background: transparent;
+  color: #29272d;
+  border: 1.5px solid #ddddd9;
+}
+
+.mc-btn.predicted:hover {
+  background: #f5f5f2;
+  border-color: #29272d;
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .mc-score-num {
+    font-size: 2rem;
+    min-width: 1.6rem;
+  }
+  .mc-name {
+    font-size: 0.72rem;
+    max-width: 80px;
+  }
+  .mc-flag {
+    font-size: 1.1rem;
+  }
+  .match-card-v2 {
+    padding: 0.75rem 0.85rem 0.65rem;
+  }
+  .mc-meta {
+    font-size: 0.68rem;
+  }
+}
+
 /* ===== GROUPS / STANDINGS ===== */
 .groups-grid {
   display: grid;

@@ -942,7 +942,7 @@ async function apiFetch(path, options = {}, authHeader = null) {
   });
 
   let data;
-  try { data = await res.json(); } catch { data = {}; }
+  try { data = (await res.json()) ?? {}; } catch { data = {}; }
 
   if (!res.ok) {
     const msg = data?.detail || data?.message || `Error ${res.status}`;
@@ -1034,7 +1034,7 @@ async function submitForgotPassword() {
     errEl.style.color = '#22c55e';
     errEl.style.background = 'rgba(34,197,94,0.1)';
     errEl.style.borderColor = 'rgba(34,197,94,0.3)';
-    errEl.textContent = data.message || 'Si ese email esta registrado, recibiras un link en breve.';
+    errEl.textContent = (data && data.message) ? data.message : 'Si ese email esta registrado, recibiras un link en breve.';
     btn.textContent = 'Enviado';
   } catch (e) {
     errEl.style.display = 'block';

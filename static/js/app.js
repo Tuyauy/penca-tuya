@@ -14,7 +14,6 @@ let selectedKoWinner = null;
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
   loadAuth();
-  loadHomeStats();
   loadTop3();
 
   // Fixture tab buttons
@@ -102,6 +101,7 @@ function navigate(page) {
   // Load page data
   if (page === 'fixture') loadFixture(currentPhase);
   if (page === 'ranking') loadRanking();
+  if (page === 'groups') loadGroups();
   if (page === 'profile') loadProfile();
   if (page === 'admin') loadAdmin();
   if (page === 'prizes') {} // static
@@ -146,46 +146,211 @@ async function loadTop3() {
   } catch {}
 }
 
+// ===== GROUPS =====
+async function loadGroups() {
+  const container = document.getElementById('groupsContent');
+  if (!container) return;
+  container.innerHTML = '<div class="loading">Cargando tablas de posiciones...</div>';
+
+  // Static group standings for World Cup 2026 (fallback data)
+  const staticGroups = [
+    { group: 'A', teams: [
+      { name: 'Estados Unidos', code: 'USA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Panamá', code: 'PAN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Honduras', code: 'HON', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Jamaica', code: 'JAM', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'B', teams: [
+      { name: 'Argentina', code: 'ARG', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Ecuador', code: 'ECU', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Venezuela', code: 'VEN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Chile', code: 'CHI', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'C', teams: [
+      { name: 'México', code: 'MEX', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Brasil', code: 'BRA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Colombia', code: 'COL', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Bolivia', code: 'BOL', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'D', teams: [
+      { name: 'Francia', code: 'FRA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Alemania', code: 'GER', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Portugal', code: 'POR', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Georgia', code: 'GEO', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'E', teams: [
+      { name: 'España', code: 'ESP', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Croacia', code: 'CRO', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Serbia', code: 'SRB', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Eslovaquia', code: 'SVK', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'F', teams: [
+      { name: 'Uruguay', code: 'URU', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Canadá', code: 'CAN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Marruecos', code: 'MAR', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Senegal', code: 'SEN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'G', teams: [
+      { name: 'Inglaterra', code: 'ENG', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Países Bajos', code: 'NED', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Bélgica', code: 'BEL', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Escocia', code: 'SCO', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'H', teams: [
+      { name: 'Japón', code: 'JPN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Australia', code: 'AUS', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Arabia Saudita', code: 'KSA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Uzbekistán', code: 'UZB', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'I', teams: [
+      { name: 'Turquía', code: 'TUR', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Rep. Checa', code: 'CZE', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Albania', code: 'ALB', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Polonia', code: 'POL', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'J', teams: [
+      { name: 'Rumania', code: 'ROU', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Austria', code: 'AUT', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Hungría', code: 'HUN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Corea del Sur', code: 'KOR', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'K', teams: [
+      { name: 'Irán', code: 'IRN', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Irak', code: 'IRQ', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Omán', code: 'OMA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Costa Rica', code: 'CRC', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]},
+    { group: 'L', teams: [
+      { name: 'El Salvador', code: 'SLV', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Trinidad y Tobago', code: 'TRI', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Sud Africa', code: 'RSA', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 },
+      { name: 'Mali', code: 'MLI', p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, pts: 0 }
+    ]}
+  ];
+
+  // Try to fetch live data from our backend first
+  let groups = staticGroups;
+  try {
+    const data = await apiFetch('/api/matches/standings');
+    if (data && data.groups && data.groups.length > 0) {
+      groups = data.groups;
+    }
+  } catch (e) {
+    // Use static fallback
+  }
+
+  function renderGroupTable(groupData) {
+    const rows = groupData.teams.map((t, i) => {
+      const isTop2 = i < 2;
+      const gd = (t.gf || 0) - (t.ga || 0);
+      const flag = teamFlag(t.code);
+      return `<tr class="${isTop2 ? 'standings-qualify' : ''}">
+        <td>${i + 1}</td>
+        <td class="standings-team">${flag} ${escHtml(t.name)}</td>
+        <td>${t.p || 0}</td>
+        <td>${t.w || 0}</td>
+        <td>${t.d || 0}</td>
+        <td>${t.l || 0}</td>
+        <td>${t.gf || 0}</td>
+        <td>${t.ga || 0}</td>
+        <td>${gd >= 0 ? '+' + gd : gd}</td>
+        <td class="standings-pts">${t.pts || 0}</td>
+      </tr>`;
+    }).join('');
+    return `<div class="group-standings-card">
+      <div class="group-label">Grupo ${groupData.group}</div>
+      <table class="standings-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Equipo</th>
+            <th>PJ</th>
+            <th>G</th>
+            <th>E</th>
+            <th>P</th>
+            <th>GF</th>
+            <th>GC</th>
+            <th>DG</th>
+            <th>Pts</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  }
+
+  const html = `
+    <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1.5rem;text-align:center">
+      Los primeros 2 de cada grupo clasifican a 16avos de final
+    </p>
+    <div class="groups-grid">
+      ${groups.map(g => renderGroupTable(g)).join('')}
+    </div>
+  `;
+  container.innerHTML = html;
+}
+
 // ===== FIXTURE =====
 async function loadFixture(phase) {
   const container = document.getElementById('fixtureContent');
   if (!container) return;
   container.innerHTML = '<div class="loading">Cargando partidos...</div>';
-
   try {
     const token = currentToken ? `Bearer ${currentToken}` : null;
     const data = await apiFetch(`/api/matches/?phase=${phase}`, {}, token);
-
     if (!data.phases || data.phases.length === 0) {
       container.innerHTML = '<p class="empty-state">Todavía no hay partidos cargados para esta fase. ¡Volvé pronto! ⚽</p>';
       return;
     }
-
     let html = '';
     for (const phaseGroup of data.phases) {
       if (phase !== 'group') {
         html += renderMatchList(phaseGroup.matches, phaseGroup.phase);
       } else {
-        // Group by group_name
-        const byGroup = {};
-        for (const m of phaseGroup.matches) {
-          const g = m.group_name || '?';
-          if (!byGroup[g]) byGroup[g] = [];
-          byGroup[g].push(m);
+        // Group phase: sort all matches chronologically, then group by day
+        const allMatches = phaseGroup.matches.slice();
+        allMatches.sort((a, b) => {
+          if (!a.match_date) return 1;
+          if (!b.match_date) return -1;
+          return new Date(a.match_date) - new Date(b.match_date);
+        });
+        // Group by day
+        const byDay = {};
+        const dayOrder = [];
+        for (const m of allMatches) {
+          const dayKey = m.match_date
+            ? new Date(m.match_date).toLocaleDateString('es-UY', { timeZone: 'America/Montevideo', year: 'numeric', month: '2-digit', day: '2-digit' })
+            : 'Fecha a confirmar';
+          if (!byDay[dayKey]) {
+            byDay[dayKey] = [];
+            dayOrder.push(dayKey);
+          }
+          byDay[dayKey].push(m);
         }
-        for (const [g, matches] of Object.entries(byGroup).sort()) {
-          html += `<div class="group-label">Grupo ${g}</div>`;
-          html += renderMatchList(matches, 'group');
+        for (const dayKey of dayOrder) {
+          let dayLabel = dayKey;
+          if (dayKey !== 'Fecha a confirmar') {
+            try {
+              // Parse dd/mm/yyyy back to a Date for formatting
+              const [dd, mm, yyyy] = dayKey.split('/');
+              const d = new Date(`${yyyy}-${mm}-${dd}T12:00:00`);
+              dayLabel = d.toLocaleDateString('es-UY', {
+                weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Montevideo'
+              });
+              // Capitalize first letter
+              dayLabel = dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1);
+            } catch {}
+          }
+          html += `<div class="group-label">${dayLabel}</div>`;
+          html += renderMatchList(byDay[dayKey], 'group');
         }
       }
     }
-
     container.innerHTML = html || '<p class="empty-state">No hay partidos en esta fase aún.</p>';
   } catch (e) {
     container.innerHTML = '<p class="empty-state">Error cargando partidos. Intentá de nuevo.</p>';
   }
 }
-
 function renderMatchList(matches, phase) {
   return matches.map(m => renderMatchCard(m, phase)).join('');
 }

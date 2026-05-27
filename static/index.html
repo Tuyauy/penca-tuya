@@ -90,34 +90,63 @@
       <section class="points-system">
         <div class="container">
           <h2 class="section-title">Sistema de puntos</h2>
+
+          <h3 class="points-subtitle">Fase de grupos</h3>
           <div class="points-grid">
             <div class="points-card gold">
               <div class="points-val">10</div>
               <div class="points-label">pts</div>
-              <p>Resultado exacto<br><small>Ej: predijiste 2-1, sale 2-1</small></p>
+              <p>Marcador exacto<br><small>Ej: predijiste 2-1, sale 2-1</small></p>
             </div>
             <div class="points-card green">
               <div class="points-val">7</div>
               <div class="points-label">pts</div>
-              <p>Empate correcto<br><small>Predijiste empate, hubo empate (distinto marcador)</small></p>
+              <p>Empate exacto, marcador diferente<br><small>Predijiste empate, hubo empate (otro marcador)</small></p>
             </div>
             <div class="points-card blue">
               <div class="points-val">5</div>
               <div class="points-label">pts</div>
-              <p>Diferencia exacta<br><small>Ej: predijiste 2-1, sale 3-2 o 1-0</small></p>
+              <p>Diferencia de goles exacta<br><small>Ej: predijiste 2-1, sale 3-2 o 1-0</small></p>
             </div>
             <div class="points-card orange">
               <div class="points-val">3</div>
               <div class="points-label">pts</div>
               <p>Ganador correcto<br><small>Acertaste quién gana pero no la diferencia</small></p>
             </div>
+            <div class="points-card gray">
+              <div class="points-val">0</div>
+              <div class="points-label">pts</div>
+              <p>Todo mal<br><small>Erraste el resultado</small></p>
+            </div>
+          </div>
+
+          <h3 class="points-subtitle" style="margin-top:2rem">Fase eliminatoria — bonus por avance</h3>
+          <p class="points-note" style="margin-bottom:1rem">En 16avos, 8vos, semis y final, si hay empate en los 90 minutos se suma un bonus adicional:</p>
+          <div class="points-grid">
+            <div class="points-card gold">
+              <div class="points-val">+5</div>
+              <div class="points-label">pts</div>
+              <p>Acertaste quién avanza <strong>y</strong> la resolución exacta<br><small>ET o penales — ambos correctos</small></p>
+            </div>
+            <div class="points-card green">
+              <div class="points-val">+3</div>
+              <div class="points-label">pts</div>
+              <p>Acertaste quién avanza pero erraste la resolución<br><small>Dijiste ET, fue penales (o viceversa)</small></p>
+            </div>
+            <div class="points-card gray">
+              <div class="points-val">+0</div>
+              <div class="points-label">pts</div>
+              <p>Erraste quién avanza<br><small>Sin bonus</small></p>
+            </div>
+          </div>
+
+          <div class="points-grid" style="margin-top:1.5rem">
             <div class="points-card dark">
               <div class="points-val">10</div>
               <div class="points-label">pts</div>
-              <p>Compra en TUYA 🛍️<br><small>Cada compra suma igual que un resultado exacto</small></p>
+              <p>Compra en TUYA 🛍️<br><small>Cada compra suma igual que un marcador exacto</small></p>
             </div>
           </div>
-          <p class="points-note">⚡ En 16avos, 8vos, 4tos, semis y final podés predecir tiempo extra o penales si hay empate.</p>
         </div>
       </section>
 
@@ -227,7 +256,70 @@
             <p class="prize-desc">Productos de la nueva colección TUYA — ropa original uruguaya para estrenar.</p>
           </div>
         </div>
-        <div style="text-align:center; margin-top: 3rem">
+
+        <!-- Sistema de puntos en página de premios -->
+        <div style="margin-top:3rem">
+          <h2 class="section-title" style="text-align:center">Sistema de puntos</h2>
+
+          <h3 class="points-subtitle">Fase de grupos</h3>
+          <div class="points-grid">
+            <div class="points-card gold">
+              <div class="points-val">10</div>
+              <div class="points-label">pts</div>
+              <p>Marcador exacto<br><small>Ej: predijiste 2-1, sale 2-1</small></p>
+            </div>
+            <div class="points-card green">
+              <div class="points-val">7</div>
+              <div class="points-label">pts</div>
+              <p>Empate exacto, marcador diferente<br><small>Predijiste empate, hubo empate (otro marcador)</small></p>
+            </div>
+            <div class="points-card blue">
+              <div class="points-val">5</div>
+              <div class="points-label">pts</div>
+              <p>Diferencia de goles exacta<br><small>Ej: predijiste 2-1, sale 3-2 o 1-0</small></p>
+            </div>
+            <div class="points-card orange">
+              <div class="points-val">3</div>
+              <div class="points-label">pts</div>
+              <p>Ganador correcto<br><small>Acertaste quién gana pero no la diferencia</small></p>
+            </div>
+            <div class="points-card gray">
+              <div class="points-val">0</div>
+              <div class="points-label">pts</div>
+              <p>Todo mal<br><small>Erraste el resultado</small></p>
+            </div>
+          </div>
+
+          <h3 class="points-subtitle" style="margin-top:2rem">Fase eliminatoria — bonus por avance</h3>
+          <p class="points-note" style="margin-bottom:1rem">En 16avos, 8vos, semis y final, si hay empate en los 90 minutos se suma un bonus adicional:</p>
+          <div class="points-grid">
+            <div class="points-card gold">
+              <div class="points-val">+5</div>
+              <div class="points-label">pts</div>
+              <p>Acertaste quién avanza <strong>y</strong> la resolución exacta<br><small>ET o penales — ambos correctos</small></p>
+            </div>
+            <div class="points-card green">
+              <div class="points-val">+3</div>
+              <div class="points-label">pts</div>
+              <p>Acertaste quién avanza pero erraste la resolución<br><small>Dijiste ET, fue penales (o viceversa)</small></p>
+            </div>
+            <div class="points-card gray">
+              <div class="points-val">+0</div>
+              <div class="points-label">pts</div>
+              <p>Erraste quién avanza<br><small>Sin bonus</small></p>
+            </div>
+          </div>
+
+          <div class="points-grid" style="margin-top:1.5rem">
+            <div class="points-card dark">
+              <div class="points-val">10</div>
+              <div class="points-label">pts</div>
+              <p>Compra en TUYA 🛍️<br><small>Cada compra suma igual que un marcador exacto</small></p>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center; margin-top: 3rem; padding-bottom:2rem">
           <p style="margin-bottom:1rem; color: var(--gray)">¿Todavía no jugás?</p>
           <button class="btn-primary" onclick="navigate('register')">REGISTRATE GRATIS</button>
         </div>

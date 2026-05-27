@@ -1361,3 +1361,99 @@ main {
   
   .prizes-grid.big { grid-template-columns: 1fr; }
 }
+
+/* ===== GROUPS / STANDINGS ===== */
+.groups-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.group-standings-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.group-standings-card .group-label {
+  background: var(--surface-2, #1a1a1a);
+  padding: 0.6rem 1rem;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  letter-spacing: 2px;
+  color: var(--gold);
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.standings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.standings-table th {
+  padding: 0.4rem 0.5rem;
+  text-align: center;
+  color: var(--gray);
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+}
+
+.standings-table th:nth-child(2) {
+  text-align: left;
+}
+
+.standings-table td {
+  padding: 0.45rem 0.5rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+.standings-table td:nth-child(2) {
+  text-align: left;
+}
+
+.standings-table tr:last-child td {
+  border-bottom: none;
+}
+
+.standings-table tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.standings-qualify {
+  background: rgba(var(--green-rgb, 34,197,94), 0.05);
+}
+
+.standings-qualify td:first-child {
+  border-left: 3px solid var(--green, #22c55e);
+}
+
+.standings-pts {
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.standings-team {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+@media (max-width: 640px) {
+  .groups-grid {
+    grid-template-columns: 1fr;
+  }
+  .standings-table {
+    font-size: 0.75rem;
+  }
+  .standings-table th, .standings-table td {
+    padding: 0.35rem 0.3rem;
+  }
+}
+

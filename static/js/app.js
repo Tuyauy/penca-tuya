@@ -317,33 +317,50 @@ function setupKnockoutListeners() {
   const awayScore = document.getElementById('predAwayScore');
   homeScore.addEventListener('input', checkKnockoutDraw);
   awayScore.addEventListener('input', checkKnockoutDraw);
-  // Resolution radio change: no extra logic needed — ko winner already selected
 }
 
 function checkKnockoutDraw() {
   const h = parseInt(document.getElementById('predHomeScore').value) || 0;
   const a = parseInt(document.getElementById('predAwayScore').value) || 0;
   const isDraw = h === a;
-  document.getElementById('koWinnerSection').style.display = isDraw ? 'block' : 'none';
+  document.getElementById('koResolveSection').style.display = isDraw ? 'block' : 'none';
   if (!isDraw) {
-    // Reset KO state when score becomes non-draw
+    // Reset all KO state when score becomes non-draw
     selectedKoWinner = null;
+    document.getElementById('koWinnerSection').style.display = 'none';
     document.getElementById('koWinnerHomeBtn').classList.remove('selected');
     document.getElementById('koWinnerAwayBtn').classList.remove('selected');
-    document.getElementById('koResolutionSection').style.display = 'none';
     document.querySelectorAll('input[name="resolve"]').forEach(r => r.checked = false);
   }
 }
 
-// Called when user clicks home or away team button for KO winner
+// Called when ET or PK radio changes — show the winner selector with correct label
+function onResolveChange() {
+  const resolveVal = document.querySelector('input[name="resolve"]:checked')?.value;
+  const winnerSection = document.getElementById('koWinnerSection');
+  const label = document.getElementById('koWinnerLabel');
+  if (resolveVal === 'et') {
+    label.textContent = '¿Quién gana en tiempo extra?';
+    winnerSection.style.display = 'block';
+  } else if (resolveVal === 'pk') {
+    label.textContent = '¿Quién gana en penales?';
+    winnerSection.style.display = 'block';
+  } else {
+    winnerSection.style.display = 'none';
+  }
+  // Reset winner selection when resolution type changes
+  selectedKoWinner = null;
+  document.getElementById('koWinnerHomeBtn').classList.remove('selected');
+  document.getElementById('koWinnerAwayBtn').classList.remove('selected');
+}
+
+// Called when user picks the winning team
 function setKoWinner(side) {
   selectedKoWinner = side === 'home'
     ? currentMatchForPred?.home_team?.id
     : currentMatchForPred?.away_team?.id;
   document.getElementById('koWinnerHomeBtn').classList.toggle('selected', side === 'home');
   document.getElementById('koWinnerAwayBtn').classList.toggle('selected', side === 'away');
-  // Show resolution options
-  document.getElementById('koResolutionSection').style.display = 'block';
 }
 
 function closePredModal() {
@@ -368,13 +385,13 @@ async function submitPrediction(e) {
   let etWinnerId = null;
 
   if (isKnockout && isDraw) {
-    if (!selectedKoWinner) {
-      showPredError('Indicá quién avanza');
-      return;
-    }
     const resolveVal = document.querySelector('input[name="resolve"]:checked')?.value;
     if (!resolveVal) {
-      showPredError('Indicá cómo avanza: tiempo extra o penales');
+      showPredError('Indicá si se resuelve por tiempo extra o penales');
+      return;
+    }
+    if (!selectedKoWinner) {
+      showPredError(resolveVal === 'pk' ? 'Indicá qué equipo gana los penales' : 'Indicá qué equipo gana en tiempo extra');
       return;
     }
     extraTime = true;

@@ -9,7 +9,7 @@ let currentUser = null;
 let currentToken = null;
 let currentPhase = 'group';
 let currentMatchForPred = null;
-let selectedPenaltyWinner = null;
+let selectedKoWinner = null;
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -275,7 +275,7 @@ function renderMatchCard(m, phase) {
 // ===== PREDICTION MODAL =====
 function openPredModal(match) {
   currentMatchForPred = match;
-  selectedPenaltyWinner = null;
+  selectedKoWinner = null;
 
   const homeTeam = match.home_team || {};
   const awayTeam = match.away_team || {};
@@ -289,8 +289,8 @@ function openPredModal(match) {
   document.getElementById('predHomeName').textContent = homeName;
   document.getElementById('predAwayFlag').innerHTML = teamFlagHtml(awayTeam);
   document.getElementById('predAwayName').textContent = awayName;
-  document.getElementById('penHomeBtn').textContent = homeName;
-  document.getElementById('penAwayBtn').textContent = awayName;
+  document.getElementById('koWinnerHomeBtn').textContent = homeName;
+  document.getElementById('koWinnerAwayBtn').textContent = awayName;
 
   // Load existing prediction
   const pred = match.user_prediction;
@@ -317,36 +317,39 @@ function setupKnockoutListeners() {
   const awayScore = document.getElementById('predAwayScore');
   homeScore.addEventListener('input', checkKnockoutDraw);
   awayScore.addEventListener('input', checkKnockoutDraw);
-
-  document.querySelectorAll('input[name="resolve"]').forEach(r => {
-    r.addEventListener('change', () => {
-      const isPenalties = r.value === 'pk';
-      document.getElementById('penaltyWinner').style.display = isPenalties ? 'block' : 'none';
-    });
-  });
+  // Resolution radio change: no extra logic needed — ko winner already selected
 }
 
 function checkKnockoutDraw() {
   const h = parseInt(document.getElementById('predHomeScore').value) || 0;
   const a = parseInt(document.getElementById('predAwayScore').value) || 0;
   const isDraw = h === a;
-  document.getElementById('koResolveOptions').style.display = isDraw ? 'flex' : 'none';
+  document.getElementById('koWinnerSection').style.display = isDraw ? 'block' : 'none';
   if (!isDraw) {
-    document.getElementById('penaltyWinner').style.display = 'none';
+    // Reset KO state when score becomes non-draw
+    selectedKoWinner = null;
+    document.getElementById('koWinnerHomeBtn').classList.remove('selected');
+    document.getElementById('koWinnerAwayBtn').classList.remove('selected');
+    document.getElementById('koResolutionSection').style.display = 'none';
+    document.querySelectorAll('input[name="resolve"]').forEach(r => r.checked = false);
   }
 }
 
-function setPenaltyWinner(side) {
-  selectedPenaltyWinner = side === 'home'
+// Called when user clicks home or away team button for KO winner
+function setKoWinner(side) {
+  selectedKoWinner = side === 'home'
     ? currentMatchForPred?.home_team?.id
     : currentMatchForPred?.away_team?.id;
-  document.getElementById('penHomeBtn').classList.toggle('selected', side === 'home');
-  document.getElementById('penAwayBtn').classList.toggle('selected', side === 'away');
+  document.getElementById('koWinnerHomeBtn').classList.toggle('selected', side === 'home');
+  document.getElementById('koWinnerAwayBtn').classList.toggle('selected', side === 'away');
+  // Show resolution options
+  document.getElementById('koResolutionSection').style.display = 'block';
 }
 
 function closePredModal() {
   document.getElementById('predModal').style.display = 'none';
   currentMatchForPred = null;
+  selectedKoWinner = null;
 }
 
 async function submitPrediction(e) {
@@ -362,21 +365,24 @@ async function submitPrediction(e) {
   let extraTime = false;
   let penalties = false;
   let penaltyWinnerId = null;
+  let etWinnerId = null;
 
   if (isKnockout && isDraw) {
+    if (!selectedKoWinner) {
+      showPredError('Indicá quién avanza');
+      return;
+    }
     const resolveVal = document.querySelector('input[name="resolve"]:checked')?.value;
     if (!resolveVal) {
-      showPredError('Indicá si el empate se resuelve por tiempo extra o penales');
+      showPredError('Indicá cómo avanza: tiempo extra o penales');
       return;
     }
     extraTime = true;
     penalties = resolveVal === 'pk';
     if (penalties) {
-      if (!selectedPenaltyWinner) {
-        showPredError('Indicá qué equipo gana los penales');
-        return;
-      }
-      penaltyWinnerId = selectedPenaltyWinner;
+      penaltyWinnerId = selectedKoWinner;
+    } else {
+      etWinnerId = selectedKoWinner;
     }
   }
 
@@ -393,7 +399,8 @@ async function submitPrediction(e) {
         predicted_away_score: awayScore,
         predicted_extra_time: extraTime,
         predicted_penalties: penalties,
-        predicted_penalty_winner_id: penaltyWinnerId
+        predicted_penalty_winner_id: penaltyWinnerId,
+        predicted_et_winner_id: etWinnerId
       })
     }, `Bearer ${currentToken}`);
 

@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS predictions (
   predicted_extra_time BOOLEAN DEFAULT FALSE,
   predicted_penalties BOOLEAN DEFAULT FALSE,
   predicted_penalty_winner_id INTEGER REFERENCES teams(id),
+  predicted_et_winner_id INTEGER REFERENCES teams(id),
   -- Puntos obtenidos (calculados al cargar resultado)
   points_earned INTEGER,
   points_calculated BOOLEAN DEFAULT FALSE,
@@ -116,150 +117,118 @@ DECLARE
   pts INTEGER;
   bonus INTEGER;
   is_knockout BOOLEAN;
-  real_winner_id INTEGER; -- equipo que avanzó (en ET/penales)
-  pred_winner_id INTEGER; -- equipo que el usuario predijo que avanzó
+  real_winner_id INTEGER;
+  pred_winner_id INTEGER;
+  pred_by_penalties BOOLEAN;
 BEGIN
-  -- Obtener el partido
   SELECT * INTO m FROM matches WHERE id = match_id_param;
-  
+
   IF m.status != 'finished' THEN
     RETURN;
   END IF;
-  
+
   is_knockout := m.phase IN ('r16', 'qf', 'sf', 'third', 'final');
-  
-  -- Determinar el equipo que avanzó en caso de empate KO
-  -- Si hubo penales: es penalty_winner_id
-  -- Si hubo solo ET sin penales: calculamos por diferencia de goles (no aplica en empate puro)
-  -- En la práctica: si m.extra_time=true y m.penalties=false → se resolvió en ET
-  --                  si m.penalties=true → hay penalty_winner_id definido
+
+  -- Equipo que avanzó realmente (solo KO con ET)
   IF is_knockout AND m.extra_time THEN
     IF m.penalties THEN
       real_winner_id := m.penalty_winner_id;
     ELSE
-      -- ET sin penales: ganó quien tenga más goles (el marcador ya refleja el resultado final)
       IF m.home_score > m.away_score THEN
         real_winner_id := m.home_team_id;
       ELSIF m.away_score > m.home_score THEN
         real_winner_id := m.away_team_id;
       ELSE
-        real_winner_id := NULL; -- no debería ocurrir
+        real_winner_id := NULL;
       END IF;
     END IF;
   ELSE
     real_winner_id := NULL;
   END IF;
-  
-  -- Recorrer todas las predicciones para este partido
+
   FOR p IN SELECT * FROM predictions WHERE match_id = match_id_param LOOP
     pts := 0;
     bonus := 0;
-    
-    -- =============================================
+
     -- PUNTOS BASE
-    -- =============================================
-    
-    -- Resultado exacto (10 pts)
+    -- Marcador exacto: 10 pts (en KO con ET el marcador de 90' es el empate)
     IF p.predicted_home_score = m.home_score AND p.predicted_away_score = m.away_score THEN
-      -- Para eliminatorias con ET: marcador exacto + resolución exacta = 10
-      -- marcador exacto pero resolución incorrecta = 7
-      IF is_knockout AND m.extra_time THEN
-        IF p.predicted_extra_time = TRUE AND p.predicted_penalties = m.penalties THEN
-          IF NOT m.penalties OR p.predicted_penalty_winner_id = m.penalty_winner_id THEN
-            pts := 10;
-          ELSE
-            pts := 7; -- marcador exacto pero erró ganador de penales
-          END IF;
-        ELSE
-          pts := 7; -- marcador exacto pero erró resolución (ET vs penales)
-        END IF;
-      ELSE
-        pts := 10;
-      END IF;
-    
-    -- Empate correcto pero marcador diferente (7 pts) - solo grupos
-    ELSIF NOT is_knockout 
-      AND p.predicted_home_score = p.predicted_away_score 
-      AND m.home_score = m.away_score 
-      AND (p.predicted_home_score != m.home_score OR p.predicted_away_score != m.away_score) THEN
-      pts := 7;
-    
-    -- En KO: predijo empate en 90' (hubo ET real) pero marcador diferente → 7 pts base
-    ELSIF is_knockout
-      AND m.extra_time
-      AND p.predicted_home_score = p.predicted_away_score
+      pts := 10;
+
+    -- Empate correcto, marcador diferente: 7 pts (grupos y KO con ET)
+    ELSIF p.predicted_home_score = p.predicted_away_score
       AND m.home_score = m.away_score
+      AND ((is_knockout AND m.extra_time) OR NOT is_knockout)
       AND p.predicted_home_score != m.home_score THEN
       pts := 7;
-    
-    -- Diferencia de goles exacta (5 pts)
-    ELSIF (p.predicted_home_score - p.predicted_away_score) = (m.home_score - m.away_score) 
+
+    -- Diferencia de goles exacta: 5 pts
+    ELSIF (p.predicted_home_score - p.predicted_away_score) = (m.home_score - m.away_score)
       AND (p.predicted_home_score != m.home_score OR p.predicted_away_score != m.away_score) THEN
       pts := 5;
-    
-    -- Ganador correcto pero diferencia equivocada (3 pts)
+
+    -- Ganador correcto (o empate en grupos), diferencia equivocada: 3 pts
     ELSIF (
       (p.predicted_home_score > p.predicted_away_score AND m.home_score > m.away_score) OR
-      (p.predicted_home_score < p.predicted_away_score AND m.home_score < m.away_score)
+      (p.predicted_home_score < p.predicted_away_score AND m.home_score < m.away_score) OR
+      (NOT is_knockout AND p.predicted_home_score = p.predicted_away_score AND m.home_score = m.away_score)
     ) THEN
       pts := 3;
-    
+
     ELSE
       pts := 0;
     END IF;
-    
-    -- =============================================
-    -- BONUS KO: +5 por acertar quién avanza en empate
-    -- Aplica solo si: partido KO + hubo ET/penales + usuario predijo empate en 90'
-    -- =============================================
+
+    -- BONUS KO: +5 ganador Y resolución exacta / +3 ganador pero resolución incorrecta
+    -- Aplica solo si: KO + hubo ET real + usuario predijo empate en 90'
     IF is_knockout AND m.extra_time AND real_winner_id IS NOT NULL
       AND p.predicted_home_score = p.predicted_away_score THEN
-      
-      -- Determinar a quién predijo como ganador el usuario
-      IF p.predicted_penalties THEN
-        -- Predijo penales: el ganador es el predicted_penalty_winner_id
+
+      IF p.predicted_penalties AND p.predicted_penalty_winner_id IS NOT NULL THEN
         pred_winner_id := p.predicted_penalty_winner_id;
-      ELSIF p.predicted_extra_time THEN
-        -- Predijo ET sin penales: no hay campo explícito de ganador ET
-        -- El ganador predicho es implícito en el marcador de ET (no tenemos ese dato)
-        -- En este caso usamos penalty_winner si está seteado, sino NULL
-        pred_winner_id := p.predicted_penalty_winner_id;
+        pred_by_penalties := TRUE;
+      ELSIF p.predicted_extra_time AND p.predicted_et_winner_id IS NOT NULL THEN
+        pred_winner_id := p.predicted_et_winner_id;
+        pred_by_penalties := FALSE;
       ELSE
         pred_winner_id := NULL;
+        pred_by_penalties := NULL;
       END IF;
-      
+
       IF pred_winner_id IS NOT NULL AND pred_winner_id = real_winner_id THEN
-        bonus := 5;
+        IF pred_by_penalties = m.penalties THEN
+          bonus := 5;
+        ELSE
+          bonus := 3;
+        END IF;
       END IF;
     END IF;
-    
+
     pts := pts + bonus;
-    
-    -- Actualizar predicción
-    UPDATE predictions 
+
+    UPDATE predictions
     SET points_earned = pts, points_calculated = TRUE, updated_at = NOW()
     WHERE id = p.id;
-    
-    -- Actualizar puntos del usuario
+
     UPDATE penca_users
-    SET 
+    SET
       prediction_points = (
-        SELECT COALESCE(SUM(points_earned), 0) 
-        FROM predictions 
+        SELECT COALESCE(SUM(points_earned), 0)
+        FROM predictions
         WHERE user_id = p.user_id AND points_calculated = TRUE
       ),
       total_points = (
-        SELECT COALESCE(SUM(points_earned), 0) 
-        FROM predictions 
+        SELECT COALESCE(SUM(points_earned), 0)
+        FROM predictions
         WHERE user_id = p.user_id AND points_calculated = TRUE
       ) + (
-        SELECT COALESCE(SUM(points_granted), 0) 
-        FROM purchase_points 
+        SELECT COALESCE(SUM(points_granted), 0)
+        FROM purchase_points
         WHERE user_id = p.user_id
       ),
       updated_at = NOW()
     WHERE id = p.user_id;
-    
+
   END LOOP;
 END;
 $$ LANGUAGE plpgsql;

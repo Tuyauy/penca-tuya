@@ -201,7 +201,7 @@ async def forgot_password(request: Request):
 async def reset_password(request: Request):
     data = await request.json()
     token = data.get("token", "")
-    new_password = data.get("password", "")
+    new_password = data.get("new_password", "")
 
     if not token or not new_password:
         raise HTTPException(status_code=400, detail="Token y contrasena requeridos.")

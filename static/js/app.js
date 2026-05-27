@@ -398,6 +398,7 @@ function renderMatchCard(m, phase) {
 
   // Date
   const dateStr = m.match_date ? formatMatchDate(m.match_date) : 'Fecha a confirmar';
+  const venueStr = (m.venue || m.city) ? ` · ${escHtml(m.venue || m.city)}` : '';
 
   // Status badge
   let badge = '';
@@ -439,7 +440,7 @@ function renderMatchCard(m, phase) {
       <div class="match-center">
         ${badge}
         ${scoreHtml}
-        <div class="match-date">${dateStr}</div>
+        <div class="match-date">${dateStr}${venueStr}</div>
         ${predHtml}
         ${actionHtml}
       </div>
@@ -1169,10 +1170,18 @@ function escHtml(str) {
 function formatMatchDate(isoStr) {
   try {
     const d = new Date(isoStr);
-    return d.toLocaleDateString('es-UY', {
-      weekday: 'short', day: 'numeric', month: 'short',
-      hour: '2-digit', minute: '2-digit', timeZone: 'America/Montevideo'
+    const TZ = 'America/Montevideo';
+    // Date part: "Jue 12 jun"
+    const datePart = d.toLocaleDateString('es-UY', {
+      weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ
     });
+    // Time part: "19:00"
+    const timePart = d.toLocaleTimeString('es-UY', {
+      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ
+    });
+    // Capitalize weekday first letter
+    const formatted = datePart.charAt(0).toUpperCase() + datePart.slice(1);
+    return `${formatted} · ${timePart}`;
   } catch { return isoStr; }
 }
 

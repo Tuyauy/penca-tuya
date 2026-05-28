@@ -696,12 +696,10 @@ async function loadRanking() {
             <div class="rank-username">${escHtml(u.username)}${isMe ? ' <small style="color:var(--gold)">← vos</small>' : ''}</div>
             ${u.full_name ? `<div style="font-size:0.75rem;color:var(--gray)">${escHtml(u.full_name)}</div>` : ''}
           </td>
+          <td style="font-size:0.85rem;color:var(--gold);font-weight:700;text-align:center">${u.exact_results || 0}</td>
           <td>
             <div class="rank-points">${u.total_points}</div>
-            <div class="rank-pts-breakdown">⚽ ${u.prediction_points} + 🛍️ ${u.purchase_points}</div>
           </td>
-          <td class="hide-mobile" style="font-size:0.8rem;color:var(--gray)">${u.predictions_made || 0}</td>
-          <td class="hide-mobile" style="font-size:0.8rem;color:var(--gold)">${u.exact_results || 0}</td>
         </tr>
       `;
     }).join('');
@@ -712,9 +710,8 @@ async function loadRanking() {
           <tr>
             <th>#</th>
             <th>Jugador</th>
+            <th>🎯 Exactos</th>
             <th>Puntos</th>
-            <th class="hide-mobile">Pronósticos</th>
-            <th class="hide-mobile">🎯 Exactos</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

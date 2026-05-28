@@ -1470,15 +1470,34 @@ main {
 
   .groups-grid { grid-template-columns: 1fr; }
 
-  /* Force match card horizontal layout on all mobile sizes */
+  /* Match card v2 — column layout: flag on top, name below */
   .match-card-v2 .mc-row,
   .mc-row {
     display: grid !important;
     grid-template-columns: 1fr auto 1fr !important;
-    align-items: center !important;
+    align-items: start !important;
   }
-  .mc-team.home { justify-self: start; flex-direction: row; }
-  .mc-team.away { justify-self: end; flex-direction: row; }
+  .mc-team {
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+  .mc-team.home {
+    justify-self: start;
+    align-items: flex-start;
+  }
+  .mc-team.away {
+    justify-self: end;
+    align-items: flex-end;
+  }
+  .mc-flag { font-size: 1.6rem; line-height: 1; }
+  .mc-name { font-size: 0.72rem; line-height: 1.2; }
+  .mc-scores {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    padding-top: 2px;
+  }
 
   .prizes-grid.big { grid-template-columns: 1fr; }
 }
@@ -1804,35 +1823,38 @@ main {
 
 /* Responsive */
 @media (max-width: 480px) {
-  /* Match card v2 — keep horizontal grid, reduce font sizes */
+  /* Match card v2 — column layout, small screen sizes */
   .match-card-v2 .mc-row,
   .mc-row {
     display: grid !important;
     grid-template-columns: 1fr auto 1fr !important;
+    align-items: start !important;
+  }
+  .mc-team {
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+  .mc-team.home {
+    justify-self: start;
+    align-items: flex-start;
+  }
+  .mc-team.away {
+    justify-self: end;
+    align-items: flex-end;
+  }
+  .mc-scores {
+    flex-direction: column !important;
     align-items: center !important;
-    min-height: 48px;
+    justify-content: flex-start !important;
+    padding-top: 2px;
+    gap: 2px !important;
   }
-  .mc-team.home { justify-self: start; flex-direction: row; }
-  .mc-team.away { justify-self: end; flex-direction: row; }
-  .mc-score-num {
-    font-size: 1.1rem;
-    min-width: 0.9rem;
-  }
-  .mc-name {
-    font-size: 0.7rem;
-  }
-  .mc-flag {
-    font-size: 1.2rem;
-  }
-  .mc-vs {
-    font-size: 0.75rem;
-  }
-  .match-card-v2 {
-    padding: 0.65rem 0.7rem 0.55rem;
-  }
-  .mc-meta {
-    font-size: 0.65rem;
-  }
+  .mc-flag { font-size: 1.6rem; line-height: 1; }
+  .mc-name { font-size: 0.72rem; line-height: 1.2; }
+  .mc-score-num { font-size: 1.1rem; min-width: 0.9rem; }
+  .mc-vs { font-size: 0.75rem; }
+  .match-card-v2 { padding: 0.65rem 0.7rem 0.55rem; }
+  .mc-meta { font-size: 0.65rem; }
 }
 
 /* ===== MODAL MOBILE ===== */

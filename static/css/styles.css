@@ -1470,12 +1470,12 @@ main {
 
   .groups-grid { grid-template-columns: 1fr; }
 
-  /* Match card v2 — column layout: flag on top, name below */
+  /* Match card v2 mobile: flag+name column, scores horizontal */
   .match-card-v2 .mc-row,
   .mc-row {
     display: grid !important;
     grid-template-columns: 1fr auto 1fr !important;
-    align-items: start !important;
+    align-items: center !important;
   }
   .mc-team {
     flex-direction: column !important;
@@ -1493,10 +1493,10 @@ main {
   .mc-name { font-size: 0.72rem; line-height: 1.2; }
   .mc-scores {
     display: flex !important;
-    flex-direction: column !important;
+    flex-direction: row !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    padding-top: 2px;
+    justify-content: center !important;
+    gap: 6px !important;
   }
 
   .prizes-grid.big { grid-template-columns: 1fr; }
@@ -1823,12 +1823,12 @@ main {
 
 /* Responsive */
 @media (max-width: 480px) {
-  /* Match card v2 — column layout, small screen sizes */
+  /* Match card v2: flag+name column, scores horizontal row */
   .match-card-v2 .mc-row,
   .mc-row {
     display: grid !important;
     grid-template-columns: 1fr auto 1fr !important;
-    align-items: start !important;
+    align-items: center !important;
   }
   .mc-team {
     flex-direction: column !important;
@@ -1843,11 +1843,11 @@ main {
     align-items: flex-end;
   }
   .mc-scores {
-    flex-direction: column !important;
+    display: flex !important;
+    flex-direction: row !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    padding-top: 2px;
-    gap: 2px !important;
+    justify-content: center !important;
+    gap: 5px !important;
   }
   .mc-flag { font-size: 1.6rem; line-height: 1; }
   .mc-name { font-size: 0.72rem; line-height: 1.2; }

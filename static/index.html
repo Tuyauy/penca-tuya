@@ -235,30 +235,40 @@
       <div class="page-header">
         <div class="container">
           <h1 class="page-title">PREMIOS</h1>
-          <p>Lo que está en juego</p>
+          <p>Lo que se juega este mundial</p>
         </div>
       </div>
       <div class="container">
-        <div class="prizes-grid big">
-          <div class="prize-card first big">
-            <div class="prize-pos">🥇</div>
-            <h2>1° Puesto</h2>
-            <p class="prize-desc">Estadía un fin de semana en lugar a confirmar. Una experiencia única para arrancar el año como se merece.</p>
+
+        <!-- Prize cards -->
+        <div class="prize-cards-v2">
+
+          <div class="prize-card-v2 first">
+            <div class="prize-medal">🥇</div>
+            <div class="prize-rank">PRIMER PREMIO</div>
+            <h2 class="prize-title-v2">Escapada mágica para dos</h2>
+            <p class="prize-desc-v2">Una estadía de fin de semana para 2 personas en los mejores hoteles y estancias del Uruguay. El ganador elige el destino: costa, campo, viñedos, ciudad. Una pausa de verdad, para dos.</p>
+            <p class="prize-extra">+ 2 remeras TUYA a elección</p>
           </div>
-          <div class="prize-card second big">
-            <div class="prize-pos">🥈</div>
-            <h2>2° Puesto</h2>
-            <p class="prize-desc">Una bodega de vinos seleccionada o productos exclusivos de la marca TUYA.</p>
+
+          <div class="prize-card-v2 second">
+            <div class="prize-medal">🥈</div>
+            <div class="prize-rank">SEGUNDO PREMIO</div>
+            <h2 class="prize-title-v2">El outfit del campeón</h2>
+            <p class="prize-desc-v2">La camiseta oficial de la Selección Uruguaya más un buzo TUYA a elección. Vestite de campeón dentro y fuera de la cancha.</p>
           </div>
-          <div class="prize-card third big">
-            <div class="prize-pos">🥉</div>
-            <h2>3° Puesto</h2>
-            <p class="prize-desc">Productos de la nueva colección TUYA — ropa original uruguaya para estrenar.</p>
+
+          <div class="prize-card-v2 third">
+            <div class="prize-medal">🥉</div>
+            <div class="prize-rank">TERCER PREMIO</div>
+            <h2 class="prize-title-v2">Un año de pilchas</h2>
+            <p class="prize-desc-v2">50% de descuento en toda la tienda TUYA durante todo el 2026. Todo el año, la mitad del precio.</p>
           </div>
+
         </div>
 
-        <!-- Sistema de puntos en página de premios -->
-        <div style="margin-top:3rem">
+        <!-- Sistema de puntos -->
+        <div class="prizes-scoring">
           <h2 class="section-title" style="text-align:center">Sistema de puntos</h2>
 
           <h3 class="points-subtitle">Fase de grupos</h3>
@@ -291,7 +301,7 @@
           </div>
 
           <h3 class="points-subtitle" style="margin-top:2rem">Fase eliminatoria — bonus por avance</h3>
-          <p class="points-note" style="margin-bottom:1rem">En 16avos, 8vos, semis y final, si hay empate en los 90 minutos se suma un bonus adicional:</p>
+          <p class="points-note" style="margin-bottom:1rem">En 16avos en adelante, si hay empate en los 90 minutos se suma un bonus adicional al puntaje base:</p>
           <div class="points-grid">
             <div class="points-card gold">
               <div class="points-val">+5</div>
@@ -319,7 +329,7 @@
           </div>
         </div>
 
-        <div style="text-align:center; margin-top: 3rem; padding-bottom:2rem">
+        <div style="text-align:center; margin-top:3rem; padding-bottom:3rem">
           <p style="margin-bottom:1rem; color: var(--gray)">¿Todavía no jugás?</p>
           <button class="btn-primary" onclick="navigate('register')">REGISTRATE GRATIS</button>
         </div>

@@ -109,17 +109,27 @@ function navigate(page) {
 }
 
 function toggleMenu() {
-  const links = document.getElementById('navLinks');
-  links.classList.toggle('open');
-  const ham = document.getElementById('hamburger');
-  if (ham) ham.textContent = links.classList.contains('open') ? '✕' : '☰';
+  const menu = document.getElementById('navMenu');
+  const btn = document.getElementById('menuToggle');
+  if (!menu) return;
+  menu.classList.toggle('open');
+  if (btn) btn.textContent = menu.classList.contains('open') ? '✕' : '☰';
 }
 
 function closeMenu() {
-  const links = document.getElementById('navLinks');
-  links.classList.remove('open');
-  const ham = document.getElementById('hamburger');
-  if (ham) ham.textContent = '☰';
+  const menu = document.getElementById('navMenu');
+  const btn = document.getElementById('menuToggle');
+  if (menu) menu.classList.remove('open');
+  if (btn) btn.textContent = '☰';
+}
+
+function adjustScore(id, delta) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const current = parseInt(el.dataset.value || 0);
+  const next = Math.max(0, current + delta);
+  el.dataset.value = next;
+  el.textContent = next;
 }
 
 // ===== HOME STATS =====
@@ -469,8 +479,8 @@ function renderMatchCard(m, phase) {
           ${awayScoreDisplay}
         </div>
         <div class="mc-team away">
-          <span class="mc-name">${escHtml(awayName)}</span>
           <span class="mc-flag">${awayFlag}</span>
+          <span class="mc-name">${escHtml(awayName)}</span>
         </div>
       </div>
       <div class="mc-meta">${metaLine}${etNote}</div>
@@ -503,8 +513,12 @@ function openPredModal(match) {
 
   // Load existing prediction
   const pred = match.user_prediction;
-  document.getElementById('predHomeScore').value = pred ? pred.predicted_home_score : 0;
-  document.getElementById('predAwayScore').value = pred ? pred.predicted_away_score : 0;
+  const homeVal = pred ? pred.predicted_home_score : 0;
+  const awayVal = pred ? pred.predicted_away_score : 0;
+  const homeEl2 = document.getElementById('predHomeScore');
+  const awayEl2 = document.getElementById('predAwayScore');
+  if (homeEl2) { homeEl2.dataset.value = homeVal; homeEl2.textContent = homeVal; }
+  if (awayEl2) { awayEl2.dataset.value = awayVal; awayEl2.textContent = awayVal; }
 
   // Knockout options
   const koSection = document.getElementById('knockoutOptions');
@@ -584,8 +598,10 @@ async function submitPrediction(e) {
 
   const match = currentMatchForPred;
   const isKnockout = ['r16','qf','sf','third','final'].includes(match.phase);
-  const homeScore = parseInt(document.getElementById('predHomeScore').value) || 0;
-  const awayScore = parseInt(document.getElementById('predAwayScore').value) || 0;
+  const homeEl = document.getElementById('predHomeScore');
+  const awayEl = document.getElementById('predAwayScore');
+  const homeScore = parseInt(homeEl.dataset ? homeEl.dataset.value : homeEl.value) || 0;
+  const awayScore = parseInt(awayEl.dataset ? awayEl.dataset.value : awayEl.value) || 0;
   const isDraw = homeScore === awayScore;
 
   let extraTime = false;

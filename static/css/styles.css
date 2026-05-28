@@ -522,28 +522,33 @@ main {
 
 .points-card {
   border-radius: var(--radius);
-  padding: 1.5rem;
+  padding: 1.5rem 1.25rem;
   text-align: center;
   border: 1px solid rgba(255,255,255,0.08);
 }
 
-.points-card.gold { background: rgba(77, 184, 216, 0.15); border-color: var(--celeste); }
-.points-card.green { background: rgba(34, 197, 94, 0.1); border-color: var(--green); }
-.points-card.blue { background: rgba(59, 130, 246, 0.1); border-color: var(--blue); }
-.points-card.orange { background: rgba(249, 115, 22, 0.1); border-color: var(--orange); }
-.points-card.dark { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); }
+/* Color-only variants — layout/typography is identical across all cards */
+.points-card.gold   { background: rgba(77,184,216,0.15);   border-color: var(--celeste); }
+.points-card.green  { background: rgba(34,197,94,0.1);     border-color: var(--green);   }
+.points-card.blue   { background: rgba(59,130,246,0.1);    border-color: var(--blue);    }
+.points-card.orange { background: rgba(249,115,22,0.1);    border-color: var(--orange);  }
+.points-card.dark   { background: rgba(255,255,255,0.05);  border-color: rgba(255,255,255,0.15); }
 
+/* Uniform value number — same size on every card */
 .points-val {
   font-family: var(--font-display);
-  font-size: 3.5rem;
+  font-size: 2.8rem;
+  font-weight: 900;
   line-height: 1;
 }
 
-.points-card.gold .points-val { color: var(--celeste); }
-.points-card.green .points-val { color: var(--green); }
-.points-card.blue .points-val { color: var(--blue); }
-.points-card.orange .points-val { color: var(--orange); }
+.points-card.gold   .points-val { color: var(--celeste); }
+.points-card.green  .points-val { color: var(--green);   }
+.points-card.blue   .points-val { color: var(--blue);    }
+.points-card.orange .points-val { color: var(--orange);  }
+.points-card.dark   .points-val { color: var(--gray);    }
 
+/* Uniform label */
 .points-label {
   font-size: 0.7rem;
   text-transform: uppercase;
@@ -552,8 +557,9 @@ main {
   margin-bottom: 0.75rem;
 }
 
-.points-card p { font-size: 0.85rem; color: #ccc; }
-.points-card small { color: var(--gray); font-size: 0.75rem; }
+/* Uniform description — same on every card */
+.points-card p       { font-size: 0.85rem; color: #ccc; line-height: 1.4; margin: 0; }
+.points-card p small { color: var(--gray); font-size: 0.75rem; }
 
 .points-note {
   text-align: center;

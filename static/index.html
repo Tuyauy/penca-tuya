@@ -17,17 +17,17 @@
         <img src="/static/logo-tuya-clean.png" alt="TUYA" class="nav-logo-img" />
         <span class="logo-penca">PENCA 26</span>
       </a>
-      <div class="nav-links" id="navLinks">
+      <div class="nav-menu" id="navMenu">
         <a href="#" onclick="navigate('fixture')" class="nav-link">Fixture</a>
         <a href="#" onclick="navigate('groups')" class="nav-link">Grupos</a>
         <a href="#" onclick="navigate('ranking')" class="nav-link">Ranking</a>
         <a href="#" onclick="navigate('prizes')" class="nav-link">Premios</a>
         <a href="https://tuyauy.com" target="_blank" class="nav-link">Tienda ↗</a>
+        <div class="nav-auth" id="navAuth">
+          <!-- Se llena con JS -->
+        </div>
       </div>
-      <div class="nav-auth" id="navAuth">
-        <!-- Se llena con JS -->
-      </div>
-      <button class="hamburger" id="hamburger" onclick="toggleMenu()">☰</button>
+      <button class="menu-toggle" id="menuToggle" onclick="toggleMenu()" aria-label="Menú">☰</button>
     </div>
   </nav>
 
@@ -418,13 +418,21 @@
           <div class="pred-team">
             <div class="pred-flag" id="predHomeFlag"></div>
             <div class="pred-name" id="predHomeName"></div>
-            <input type="number" id="predHomeScore" min="0" max="30" value="0" class="score-input" />
+            <div class="score-stepper">
+              <button type="button" class="stepper-btn" onclick="adjustScore('predHomeScore',-1)">−</button>
+              <span class="stepper-val" id="predHomeScore" data-value="0">0</span>
+              <button type="button" class="stepper-btn" onclick="adjustScore('predHomeScore',1)">+</button>
+            </div>
           </div>
           <div class="pred-vs">VS</div>
           <div class="pred-team">
             <div class="pred-flag" id="predAwayFlag"></div>
             <div class="pred-name" id="predAwayName"></div>
-            <input type="number" id="predAwayScore" min="0" max="30" value="0" class="score-input" />
+            <div class="score-stepper">
+              <button type="button" class="stepper-btn" onclick="adjustScore('predAwayScore',-1)">−</button>
+              <span class="stepper-val" id="predAwayScore" data-value="0">0</span>
+              <button type="button" class="stepper-btn" onclick="adjustScore('predAwayScore',1)">+</button>
+            </div>
           </div>
         </div>
         <div id="knockoutOptions" style="display:none" class="knockout-options">
@@ -450,7 +458,7 @@
           </div>
         </div>
         <div id="predError" class="form-error" style="display:none"></div>
-        <button type="submit" class="btn-primary full" id="predBtn">GUARDAR PRONÓSTICO</button>
+        <button type="submit" class="btn-celeste full" id="predBtn">GUARDAR PRONÓSTICO</button>
       </form>
     </div>
   </div>

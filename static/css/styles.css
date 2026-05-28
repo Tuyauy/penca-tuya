@@ -205,17 +205,20 @@ main {
 }
 
 .hero-badge {
-
   background: var(--celeste);
   color: var(--black);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   padding: 0.45rem 1rem;
   border-radius: 100px;
   width: fit-content;
   margin: 0 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95vw;
 }
 
 .hero-title {
@@ -316,16 +319,19 @@ main {
 
 
 .hero-badge {
-
   background: var(--celeste);
   color: var(--black);
   font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   padding: 0.4rem 1rem;
   border-radius: 100px;
   margin-bottom: 1.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95vw;
 }
 
 .hero-logo-wrap {
@@ -458,7 +464,7 @@ main {
   background: rgba(255,255,255,0.05);
 }
 
-.btn-primary.full, .btn-secondary.full {
+.btn-primary.full, .btn-secondary.full, .btn-celeste.full {
   width: 100%;
   text-align: center;
 }
@@ -1394,13 +1400,33 @@ main {
   .nav-menu.open .nav-link:hover {
     color: var(--celeste);
   }
-  .nav-menu.open .nav-auth {
-    margin-top: 0.5rem;
+  /* Hide nav-auth-menu in desktop (it shows inline with links; hide until open in mobile) */
+  .nav-auth-menu { display: none; }
+
+  .nav-menu.open .nav-auth,
+  .nav-menu.open .nav-auth-menu {
+    margin-top: 0.75rem;
     padding-top: 0.75rem;
     border-top: 1px solid rgba(255,255,255,0.1);
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+  }
+  .nav-menu.open .nav-auth .btn-primary,
+  .nav-menu.open .nav-auth .btn-secondary,
+  .nav-menu.open .nav-auth-menu .btn-primary,
+  .nav-menu.open .nav-auth-menu .btn-secondary {
+    color: #fff;
+    border-color: rgba(255,255,255,0.3);
+    background: transparent;
+    padding: 0.45rem 1rem;
+    font-size: 0.8rem;
+  }
+  .nav-menu.open .nav-auth span,
+  .nav-menu.open .nav-auth-menu span {
+    color: #aaa;
+    font-size: 0.8rem;
+    align-self: center;
   }
 
   /* Hero mobile */

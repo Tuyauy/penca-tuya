@@ -479,8 +479,8 @@ function renderMatchCard(m, phase) {
           ${awayScoreDisplay}
         </div>
         <div class="mc-team away">
-          <span class="mc-flag">${awayFlag}</span>
           <span class="mc-name">${escHtml(awayName)}</span>
+          <span class="mc-flag">${awayFlag}</span>
         </div>
       </div>
       <div class="mc-meta">${metaLine}${etNote}</div>

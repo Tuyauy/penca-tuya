@@ -532,7 +532,7 @@ main {
 .points-card.green  { background: rgba(34,197,94,0.1);     border-color: var(--green);   }
 .points-card.blue   { background: rgba(59,130,246,0.1);    border-color: var(--blue);    }
 .points-card.orange { background: rgba(249,115,22,0.1);    border-color: var(--orange);  }
-.points-card.dark   { background: rgba(255,255,255,0.05);  border-color: rgba(255,255,255,0.15); }
+.points-card.dark   { background: rgba(201,168,76,0.15);   border-color: #c9a84c; }
 
 /* Uniform value number — same size on every card */
 .points-val {
@@ -546,7 +546,7 @@ main {
 .points-card.green  .points-val { color: var(--green);   }
 .points-card.blue   .points-val { color: var(--blue);    }
 .points-card.orange .points-val { color: var(--orange);  }
-.points-card.dark   .points-val { color: var(--gray);    }
+.points-card.dark   .points-val { color: #c9a84c;        }
 
 /* Uniform label */
 .points-label {

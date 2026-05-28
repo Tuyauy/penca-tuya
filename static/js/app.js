@@ -90,6 +90,7 @@ function logout() {
 
 // ===== NAVIGATION =====
 function navigate(page) {
+  closeMenu();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(`page-${page}`);
   if (target) {
@@ -110,6 +111,15 @@ function navigate(page) {
 function toggleMenu() {
   const links = document.getElementById('navLinks');
   links.classList.toggle('open');
+  const ham = document.getElementById('hamburger');
+  if (ham) ham.textContent = links.classList.contains('open') ? '✕' : '☰';
+}
+
+function closeMenu() {
+  const links = document.getElementById('navLinks');
+  links.classList.remove('open');
+  const ham = document.getElementById('hamburger');
+  if (ham) ham.textContent = '☰';
 }
 
 // ===== HOME STATS =====
@@ -690,8 +700,8 @@ async function loadRanking() {
             <div class="rank-points">${u.total_points}</div>
             <div class="rank-pts-breakdown">⚽ ${u.prediction_points} + 🛍️ ${u.purchase_points}</div>
           </td>
-          <td style="font-size:0.8rem;color:var(--gray)">${u.predictions_made || 0}</td>
-          <td style="font-size:0.8rem;color:var(--gold)">${u.exact_results || 0}</td>
+          <td class="hide-mobile" style="font-size:0.8rem;color:var(--gray)">${u.predictions_made || 0}</td>
+          <td class="hide-mobile" style="font-size:0.8rem;color:var(--gold)">${u.exact_results || 0}</td>
         </tr>
       `;
     }).join('');
@@ -703,8 +713,8 @@ async function loadRanking() {
             <th>#</th>
             <th>Jugador</th>
             <th>Puntos</th>
-            <th>Pronósticos</th>
-            <th>🎯 Exactos</th>
+            <th class="hide-mobile">Pronósticos</th>
+            <th class="hide-mobile">🎯 Exactos</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

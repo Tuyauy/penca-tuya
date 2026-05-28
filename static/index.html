@@ -23,9 +23,9 @@
         <a href="#" onclick="navigate('ranking')" class="nav-link">Ranking</a>
         <a href="#" onclick="navigate('prizes')" class="nav-link">Premios</a>
         <a href="https://tuyauy.com" target="_blank" class="nav-link">Tienda ↗</a>
-        <div class="nav-auth" id="navAuth">
-          <!-- Se llena con JS -->
-        </div>
+      </div>
+      <div class="nav-auth" id="navAuth">
+        <!-- Se llena con JS -->
       </div>
       <button class="menu-toggle" id="menuToggle" onclick="toggleMenu()" aria-label="Menú">☰</button>
     </div>
@@ -404,6 +404,26 @@
       </div>
     </div>
 
+    <!-- GROUPS -->
+    <div id="page-groups" class="page">
+      <div class="page-header">
+        <div class="container">
+          <h1 class="page-title">GRUPOS</h1>
+          <p>Posiciones del Mundial 2026 — Fase de grupos</p>
+        </div>
+      </div>
+      <div class="container">
+        <div id="groupsContent">
+          <div class="loading">Cargando tablas de posiciones...</div>
+        </div>
+        <div style="text-align:center;margin-top:2rem;padding-bottom:1rem">
+          <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/groups" target="_blank" class="btn-secondary" style="display:inline-block;text-decoration:none;padding:0.6rem 1.4rem">
+            Ver posiciones oficiales FIFA ↗
+          </a>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- MODAL de predicción -->
@@ -517,25 +537,6 @@
       </div>
     </div>
 
-<!-- GROUPS -->
-<div id="page-groups" class="page">
-  <div class="page-header">
-    <div class="container">
-      <h1 class="page-title">GRUPOS</h1>
-      <p>Posiciones del Mundial 2026 — Fase de grupos</p>
-    </div>
-  </div>
-  <div class="container">
-    <div id="groupsContent">
-      <div class="loading">Cargando tablas de posiciones...</div>
-    </div>
-    <div style="text-align:center;margin-top:2rem;padding-bottom:1rem">
-      <a href="https://www.fifa.com/en/tournaments/mens/worldcup/canadamexicousa2026/groups" target="_blank" class="btn-secondary" style="display:inline-block;text-decoration:none;padding:0.6rem 1.4rem">
-        Ver posiciones oficiales FIFA ↗
-      </a>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>

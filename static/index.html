@@ -45,7 +45,9 @@
               <img src="/static/tuya-logo-v5.png" alt="Penca TUYA Mundial 2026" class="hero-main-img" />
             </div>
             <!-- Tagline y stats -->
-            <div class="hero-badge">⚽ MUNDIAL 2026 — CANADÁ · MÉXICO · EEUU</div>
+            <div style="display:flex;justify-content:center;width:100%">
+              <div class="hero-badge">⚽ MUNDIAL 2026 — CANADÁ · MÉXICO · EEUU</div>
+            </div>
             <h1 class="hero-title">TU PENCA</h1>
             <p class="hero-subtitle">Pronosticá los resultados, comprá en la tienda<br>y ganá premios épicos este mundial</p>
             
@@ -145,18 +147,18 @@
           <div class="prizes-grid">
             <div class="prize-card first">
               <div class="prize-pos">🥇</div>
-              <h3>1° Puesto</h3>
-              <p class="prize-desc">Estadía un fin de semana en lugar a confirmar</p>
+              <h3>Escapada mágica para dos</h3>
+              <p class="prize-desc">Estadía de fin de semana para 2 personas en hoteles y estancias del Uruguay</p>
             </div>
             <div class="prize-card second">
               <div class="prize-pos">🥈</div>
-              <h3>2° Puesto</h3>
-              <p class="prize-desc">Bodega de vinos o productos de la marca TUYA</p>
+              <h3>El outfit del campeón</h3>
+              <p class="prize-desc">Camiseta oficial de la Selección Uruguaya + buzo TUYA a elección</p>
             </div>
             <div class="prize-card third">
               <div class="prize-pos">🥉</div>
-              <h3>3° Puesto</h3>
-              <p class="prize-desc">Productos de la nueva colección TUYA</p>
+              <h3>Un año de pilchas</h3>
+              <p class="prize-desc">50% de descuento en toda la tienda TUYA durante todo el 2026</p>
             </div>
           </div>
           <div class="prizes-cta">
@@ -173,7 +175,7 @@
             <p class="empty-state">El ranking estará disponible cuando arranque el mundial 🏟️</p>
           </div>
           <div style="text-align:center; margin-top:2rem">
-            <button class="btn-secondary" onclick="navigate('ranking')">Ver ranking completo</button>
+            <button class="btn-primary dark" onclick="navigate('ranking')">Ver ranking completo</button>
           </div>
         </div>
       </section>
@@ -341,7 +343,7 @@
               <input type="password" id="regPassword" placeholder="Mínimo 6 caracteres" required />
             </div>
             <div id="registerError" class="form-error" style="display:none"></div>
-            <button type="submit" class="btn-primary full" id="registerBtn">UNIRME A LA PENCA</button>
+            <button type="submit" class="btn-celeste full" id="registerBtn">UNIRME A LA PENCA</button>
           </form>
           <p class="auth-switch">¿Ya tenés cuenta? <a href="#" onclick="navigate('login')">Iniciá sesión</a></p>
         </div>
@@ -367,7 +369,7 @@
               <input type="password" id="loginPassword" placeholder="Tu contraseña" required />
             </div>
             <div id="loginError" class="form-error" style="display:none"></div>
-            <button type="submit" class="btn-primary full" id="loginBtn">ENTRAR</button>
+            <button type="submit" class="btn-celeste full" id="loginBtn">ENTRAR</button>
           </form>
           <p class="auth-switch"><a href="#" onclick="navigate('forgot-password')">¿Olvidaste tu contraseña?</a></p>
           <p class="auth-switch">¿No tenés cuenta? <a href="#" onclick="navigate('register')">Registrate gratis</a></p>

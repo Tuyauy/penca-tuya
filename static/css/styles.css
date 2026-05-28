@@ -114,14 +114,16 @@ body {
   align-items: center;
 }
 
-.hamburger {
+.hamburger, .menu-toggle {
   display: none;
   background: none;
   border: none;
   color: var(--white);
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   cursor: pointer;
   margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  line-height: 1;
 }
 
 /* ===== MAIN ===== */
@@ -269,8 +271,8 @@ main {
 
 /* Botones hero */
 .btn-celeste {
-  background: var(--celeste);
-  color: var(--black);
+  background: #74c0e8;
+  color: #ffffff;
   border: none;
   padding: 0.9rem 2rem;
   font-family: var(--font-display);
@@ -1131,8 +1133,46 @@ main {
   outline: none;
   transition: border-color 0.2s;
 }
-
 .score-input:focus { border-color: var(--celeste-dark); box-shadow: 0 0 0 3px rgba(77,184,216,0.15); }
+
+/* Score stepper (replaces score-input on mobile) */
+.score-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.stepper-btn {
+  background: #f5f5f2;
+  border: none;
+  color: #29272d;
+  font-size: 1.5rem;
+  font-weight: 700;
+  width: 48px;
+  height: 56px;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stepper-btn:hover { background: #e0e0db; }
+.stepper-btn:active { background: var(--celeste); color: var(--black); }
+.stepper-val {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  min-width: 52px;
+  text-align: center;
+  color: #29272d;
+  padding: 0 0.25rem;
+  line-height: 56px;
+  display: block;
+}
 
 .knockout-options {
   background: rgba(77, 184, 216, 0.08);
@@ -1328,10 +1368,10 @@ main {
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .nav-links { display: none; }
-  .hamburger { display: block; }
+  .nav-menu { display: none; }
+  .menu-toggle { display: block; }
   
-  .nav-links.open {
+  .nav-menu.open {
     display: flex;
     flex-direction: column;
     position: fixed;
@@ -1345,14 +1385,22 @@ main {
     z-index: 99;
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
   }
-  .nav-links.open .nav-link {
+  .nav-menu.open .nav-link {
     color: #fff;
     font-size: 1rem;
     padding: 0.4rem 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
   }
-  .nav-links.open .nav-link:hover {
+  .nav-menu.open .nav-link:hover {
     color: var(--celeste);
+  }
+  .nav-menu.open .nav-auth {
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   /* Hero mobile */
@@ -1404,7 +1452,7 @@ main {
     align-items: center !important;
   }
   .mc-team.home { justify-self: start; flex-direction: row; }
-  .mc-team.away { justify-self: end; flex-direction: row-reverse; }
+  .mc-team.away { justify-self: end; flex-direction: row; }
 
   .prizes-grid.big { grid-template-columns: 1fr; }
 }
@@ -1568,8 +1616,8 @@ main {
 .mc-team.away {
   justify-self: end;
   justify-content: flex-end;
-  flex-direction: row-reverse;
-  text-align: right;
+  flex-direction: row;
+  text-align: left;
 }
 
 .mc-flag {
@@ -1739,7 +1787,7 @@ main {
     min-height: 48px;
   }
   .mc-team.home { justify-self: start; flex-direction: row; }
-  .mc-team.away { justify-self: end; flex-direction: row-reverse; }
+  .mc-team.away { justify-self: end; flex-direction: row; }
   .mc-score-num {
     font-size: 1.1rem;
     min-width: 0.9rem;

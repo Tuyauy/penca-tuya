@@ -2062,47 +2062,178 @@ main {
 }
 
 .countdown-card {
-  background: #29272d;
+  background: linear-gradient(135deg, #29272d 0%, #1a3a5c 100%);
   border-radius: var(--radius);
   padding: 2rem 2.5rem;
   text-align: center;
-  border: 1px solid rgba(116, 192, 232, 0.2);
+  border: 1px solid rgba(212, 191, 41, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+/* decorative top accent line */
+.countdown-card::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--celeste), #d4bf29, var(--celeste));
+}
+
+.countdown-card-accent {
+  font-size: 1.2rem;
+  margin-bottom: 0.4rem;
+  opacity: 0.7;
 }
 
 .countdown-label {
   font-family: var(--font-display);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   letter-spacing: 3px;
   text-transform: uppercase;
-  color: #aaa;
+  color: var(--celeste);
+  margin-bottom: 0.6rem;
+}
+
+.countdown-match-info {
+  font-size: 0.9rem;
+  color: #fff;
   margin-bottom: 0.75rem;
+  line-height: 1.5;
 }
 
 .countdown-timer {
   font-family: var(--font-display);
   font-size: 3rem;
   font-weight: 900;
-  color: var(--celeste);
-  letter-spacing: 2px;
+  color: #d4bf29;
+  letter-spacing: 3px;
   line-height: 1;
   margin-bottom: 1rem;
   transition: color 0.3s;
 }
 
-.countdown-timer.urgent {
-  color: #ff5622;
+.countdown-timer .cd-sep {
+  color: var(--celeste);
+  font-size: 2rem;
+  font-weight: 400;
+  opacity: 0.8;
+  margin: 0 0.1em;
 }
 
 .countdown-note {
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: #aaa;
   line-height: 1.5;
+}
+
+/* Urgent state */
+.countdown-card.urgent {
+  background: linear-gradient(135deg, #3a1a1a 0%, #5c1a1a 100%);
+  border-color: rgba(255, 86, 34, 0.5);
+}
+
+.countdown-card.urgent .countdown-label {
+  color: #ff5622;
+}
+
+.countdown-timer.urgent {
+  color: #ff5622;
+  animation: cdPulse 1s ease-in-out infinite;
 }
 
 .countdown-note.urgent {
   color: #ff5622;
   font-weight: 600;
 }
+
+@keyframes cdPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
+
+/* ===== FIXTURE STICKY COUNTDOWN ===== */
+.fixture-countdown-wrap {
+  position: sticky;
+  top: 60px; /* navbar height */
+  z-index: 50;
+  background: var(--black);
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(116, 192, 232, 0.15);
+}
+
+.countdown-card-compact {
+  background: linear-gradient(135deg, #29272d 0%, #1a3a5c 100%);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  border: 1px solid rgba(212, 191, 41, 0.25);
+  flex-wrap: wrap;
+}
+
+.cd-compact-label {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--celeste);
+  white-space: nowrap;
+}
+
+.cd-compact-match {
+  font-size: 0.8rem;
+  color: #ddd;
+  white-space: nowrap;
+}
+
+.countdown-timer-compact {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #d4bf29;
+  letter-spacing: 2px;
+  white-space: nowrap;
+}
+
+.countdown-timer-compact .cd-sep {
+  color: var(--celeste);
+  font-weight: 400;
+  margin: 0 0.05em;
+}
+
+.countdown-timer-compact.urgent {
+  color: #ff5622;
+  animation: cdPulse 1s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  .countdown-timer {
+    font-size: 2rem;
+    letter-spacing: 1px;
+  }
+
+  .countdown-timer .cd-sep {
+    font-size: 1.5rem;
+  }
+
+  .countdown-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .countdown-card-compact {
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+  }
+
+  .cd-compact-match {
+    display: none; /* hide match name on very small screens, timer+label only */
+  }
+}
+
 
 /* ===== UPCOMING MATCHES HOME ===== */
 .upcoming-section {

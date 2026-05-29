@@ -2346,6 +2346,22 @@ main {
   font-weight: 700;
   transition: opacity 0.2s;
 }
+.match-closed-badge {
+  display: block;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.72rem;
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 8px;
+  text-align: center;
+  cursor: default;
+}
+
 
 .home-mc-btn:hover { opacity: 0.85; }
 

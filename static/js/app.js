@@ -91,7 +91,7 @@ function logout() {
 }
 
 // ===== NAVIGATION =====
-function navigate(page) {
+function navigate(page, param) {
   closeMenu();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(`page-${page}`);
@@ -109,6 +109,7 @@ function navigate(page) {
   if (page === 'profile') loadProfile();
   if (page === 'admin') loadAdmin();
   if (page === 'prizes') {} // static
+  if (page === 'rival') loadRivalProfile(param);
 }
 
 function toggleMenu() {
@@ -884,7 +885,7 @@ async function loadRanking() {
       const medal = medals[pos] || pos;
       const cls = posClass[pos] || '';
       return `
-        <tr class="${isMe ? 'rank-highlight' : ''}">
+        <tr class="${isMe ? 'rank-highlight' : ''}" style="cursor:pointer" onclick="navigate('rival', '${escHtml(u.username)}')" title="Ver pronósticos de ${escHtml(u.username)}">
           <td><span class="rank-pos ${cls}">${medal}</span></td>
           <td>
             <div class="rank-username">${escHtml(u.username)}${isMe ? ' <small style="color:var(--gold)">← vos</small>' : ''}</div>
@@ -1514,5 +1515,80 @@ async function submitResetPassword() {
     errEl.textContent = e.message || 'Error. El link puede haber expirado.';
     btn.disabled = false;
     btn.textContent = 'Cambiar contrasena';
+  }
+}
+
+
+// ===== RIVAL PROFILE =====
+async function loadRivalProfile(username) {
+  if (!username) return;
+  const headerEl = document.getElementById('rivalHeader');
+  const listEl = document.getElementById('rivalPredictions');
+  if (!headerEl || !listEl) return;
+
+  headerEl.innerHTML = '<div class="loading">Cargando...</div>';
+  listEl.innerHTML = '';
+
+  try {
+    const data = await apiFetch(`/api/predictions/users/${encodeURIComponent(username)}/predictions`);
+    const user = data.user || {};
+    const preds = data.predictions || [];
+
+    headerEl.innerHTML = `
+      <div class="rival-user-info">
+        <h1 class="page-title">${escHtml(user.username || username)}</h1>
+        <div class="rival-pts-badge">${user.total_points ?? 0} puntos</div>
+      </div>
+    `;
+
+    if (preds.length === 0) {
+      listEl.innerHTML = '<p class="empty-state">Este jugador aún no tiene pronósticos visibles.</p>';
+      return;
+    }
+
+    listEl.innerHTML = preds.map(p => {
+      const m = p.match || {};
+      const ht = m.home_team || {};
+      const at = m.away_team || {};
+      const homeName = ht.name || m.home_team_placeholder || '?';
+      const awayName = at.name || m.away_team_placeholder || '?';
+      const homeFlag = ht.flag_url ? `<img src="${escHtml(ht.flag_url)}" class="rival-flag" alt="">` : '';
+      const awayFlag = at.flag_url ? `<img src="${escHtml(at.flag_url)}" class="rival-flag" alt="">` : '';
+
+      const predStr = `${p.predicted_home_score ?? '?'} - ${p.predicted_away_score ?? '?'}`;
+      const finished = m.status === 'finished';
+      const resultStr = finished ? `${m.home_score} - ${m.away_score}` : null;
+
+      const pts = p.points_earned;
+      let ptsBadge = '';
+      if (pts != null) {
+        const col = pts===10?'var(--gold)':pts===7?'var(--green)':pts===5?'var(--blue)':pts===3?'var(--orange)':'var(--red)';
+        const label = pts===10?'⚽ Exacto':pts===7?'✅ Empate OK':pts===5?'↔️ Dif. exacta':pts===3?'👍 Ganador':'❌ Errado';
+        ptsBadge = `<div class="rival-pts" style="color:${col}">${pts} pts <small>${label}</small></div>`;
+      }
+
+      return `
+        <div class="rival-pred-card">
+          <div class="rival-match-date">${m.match_date ? formatMatchDate(m.match_date) : ''}</div>
+          <div class="rival-teams">
+            <div class="rival-team home">${homeFlag}<span>${escHtml(homeName)}</span></div>
+            <div class="rival-scores">
+              <div class="rival-pred-score">${predStr}</div>
+              ${resultStr ? `<div class="rival-real-score">${resultStr}</div>` : '<div class="rival-real-score pending">En juego</div>'}
+              <div class="rival-score-labels">
+                <span>pronóstico</span>
+                <span>resultado</span>
+              </div>
+            </div>
+            <div class="rival-team away">${awayFlag}<span>${escHtml(awayName)}</span></div>
+          </div>
+          ${ptsBadge}
+        </div>
+      `;
+    }).join('');
+
+  } catch(e) {
+    headerEl.innerHTML = '<p class="empty-state">Error cargando el perfil.</p>';
+    listEl.innerHTML = '';
   }
 }

@@ -141,6 +141,20 @@ async def get_standings():
     except Exception as e:
         logger.error("Sportmonks standings error: %s", e)
         return {"groups": [], "error": str(e)}
+# ── /api/admin/link-fixtures ────────────────────────────────────────────────
+@router.get("/admin/link-fixtures")
+async def admin_link_fixtures():
+    """Trigger manual linking of unmatched Supabase matches to Sportmonks fixtures."""
+    if not SM_API_KEY:
+        return {"ok": False, "error": "SPORTMONKS_API_KEY not configured"}
+    try:
+        sb = get_supabase()
+        _link_unmatched_fixtures(sb)
+        return {"ok": True, "message": "Linking ejecutado — revisar logs para detalles"}
+    except Exception as e:
+        logger.error("admin_link_fixtures error: %s", e)
+        return {"ok": False, "error": str(e)}
+
 
 # ── Auto-sync helpers (called by scheduler) ──────────────────────────────────
 def _calculate_provisional_points(pred_home: int, pred_away: int,
@@ -217,11 +231,6 @@ _NAME_TO_CODE: dict = {
     for name in names
 }
 
-# Caché de 24 horas para fixtures raw de la temporada completa
-_RAW_SEASON_CACHE: list = []
-_RAW_SEASON_TS: float = 0.0
-_SEASON_CACHE_TTL = 86400  # 24 horas en segundos
-
 
 def _normalize_team_name(name: str) -> str:
     """Normaliza un nombre de equipo para comparación (sin tildes, lowercase)."""
@@ -257,9 +266,8 @@ def _link_unmatched_fixtures(sb) -> None:
     """
     Para cada partido en Supabase sin sportmonks_id, busca el fixture
     correspondiente en Sportmonks usando fecha + nombre de equipos.
+    Hace un fetch directo a /fixtures/season/{SM_SEASON_ID} cada vez.
     """
-    global _RAW_SEASON_CACHE, _RAW_SEASON_TS
-
     unlinked_res = sb.table("matches").select(
         "id, match_date, "
         "home_team:teams!matches_home_team_id_fkey(name, code), "
@@ -267,29 +275,29 @@ def _link_unmatched_fixtures(sb) -> None:
     ).is_("sportmonks_id", "null").execute()
     unlinked = unlinked_res.data or []
     if not unlinked:
+        logger.info("Linking: todos los partidos ya tienen sportmonks_id")
+        return
+    logger.info("Intentando linkear %d partidos sin sportmonks_id", len(unlinked))
+
+    # Fetch todos los fixtures de la temporada directamente (sin caché)
+    try:
+        raw_data = _sm_get(
+            f"/fixtures/season/{SM_SEASON_ID}",
+            {"include": "participants;state", "per_page": "500"}
+        )
+        season_fixtures = raw_data.get("data") or []
+        logger.info("Sportmonks devolvió %d fixtures para la temporada %s", len(season_fixtures), SM_SEASON_ID)
+    except Exception as fetch_err:
+        logger.error("Error fetching season fixtures para linking: %s", fetch_err)
         return
 
-    logger.info("Linking: %d partidos sin sportmonks_id", len(unlinked))
-
-    now_ts = time.time()
-    if not _RAW_SEASON_CACHE or (now_ts - _RAW_SEASON_TS) >= _SEASON_CACHE_TTL:
-        try:
-            raw_data = _sm_get(
-                f"/fixtures/seasons/{SM_SEASON_ID}",
-                {"include": "participants;state", "per_page": "500"}
-            )
-            _RAW_SEASON_CACHE = raw_data.get("data") or []
-            _RAW_SEASON_TS = now_ts
-            logger.info("Season fixtures cacheados: %d fixtures", len(_RAW_SEASON_CACHE))
-        except Exception as fetch_err:
-            logger.error("Error fetching season fixtures para linking: %s", fetch_err)
-            return
-
-    if not _RAW_SEASON_CACHE:
+    if not season_fixtures:
+        logger.warning("Linking: Sportmonks no devolvió fixtures para temporada %s", SM_SEASON_ID)
         return
 
+    # Agrupar fixtures de Sportmonks por fecha
     sm_by_date: dict = {}
-    for rf in _RAW_SEASON_CACHE:
+    for rf in season_fixtures:
         starting_at = rf.get("starting_at") or rf.get("date") or ""
         date_key = starting_at[:10]
         if date_key not in sm_by_date:
@@ -297,43 +305,51 @@ def _link_unmatched_fixtures(sb) -> None:
         sm_by_date[date_key].append(rf)
 
     linked_count = 0
+    not_linked = []
+
     for match in unlinked:
         raw_md = match.get("match_date") or ""
         if not raw_md:
             continue
         date_key = raw_md[:10]
         candidates = sm_by_date.get(date_key, [])
-        if not candidates:
-            continue
-
         home_name = (match.get("home_team") or {}).get("name", "")
         away_name = (match.get("away_team") or {}).get("name", "")
 
+        if not candidates:
+            not_linked.append(f"{home_name} vs {away_name} (sin fixtures en fecha {date_key})")
+            continue
+
+        found = False
         for rf in candidates:
             participants = rf.get("participants") or []
             home_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "home"), None)
             away_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "away"), None)
             if not home_sm or not away_sm:
                 continue
-
             home_sm_code = home_sm.get("short_code", "") or home_sm.get("code", "")
             away_sm_code = away_sm.get("short_code", "") or away_sm.get("code", "")
-
-            if (_teams_match(home_name, home_sm.get("name", ""), home_sm_code) and
-                    _teams_match(away_name, away_sm.get("name", ""), away_sm_code)):
+            if (
+                _teams_match(home_name, home_sm.get("name", ""), home_sm_code)
+                and _teams_match(away_name, away_sm.get("name", ""), away_sm_code)
+            ):
                 sm_fixture_id = rf.get("id")
                 sb.table("matches").update({"sportmonks_id": sm_fixture_id}).eq("id", match["id"]).execute()
                 logger.info(
-                    "Linked match %s (%s vs %s) → Sportmonks fixture %s",
-                    match["id"], home_name, away_name, sm_fixture_id
+                    "Linkeado: %s vs %s → Sportmonks ID %s",
+                    home_name, away_name, sm_fixture_id
                 )
                 linked_count += 1
+                found = True
                 break
+
+        if not found:
+            not_linked.append(f"{home_name} vs {away_name} (fecha {date_key}, {len(candidates)} candidatos)")
 
     if linked_count:
         logger.info("Linking completado: %d partidos linkeados", linked_count)
-    else:
-        logger.info("Linking: ningun partido nuevo linkeado")
+    for nl in not_linked:
+        logger.warning("No se pudo linkear: %s", nl)
 
 
 def sync_live_and_finished():

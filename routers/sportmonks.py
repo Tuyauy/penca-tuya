@@ -316,10 +316,11 @@ def _calculate_provisional_points(pred_home: int, pred_away: int,
         return 3
     return 0
 
-# ── Mapa código ISO → nombres en Supabase (para linking) ───────────────────
+# ── Mapa código Sportmonks → nombres en Supabase (para linking) ────────────
+# Códigos verificados directamente contra la API de Sportmonks (season 26618)
 _CODE_TO_NAMES: dict = {
     "MEX": ["México", "Mexico"],
-    "RSA": ["Sudáfrica", "Sudafrica", "South Africa"],
+    "ZAF": ["Sudáfrica", "Sudafrica", "South Africa"],       # Sportmonks usa ZAF, no RSA
     "KOR": ["Rep. de Corea", "Corea del Sur", "Korea Republic", "South Korea"],
     "CZE": ["Chequia", "Czech Republic", "Czechia"],
     "CAN": ["Canadá", "Canada"],
@@ -328,12 +329,12 @@ _CODE_TO_NAMES: dict = {
     "SUI": ["Suiza", "Switzerland"],
     "BRA": ["Brasil", "Brazil"],
     "MAR": ["Marruecos", "Morocco"],
-    "HAI": ["Haití", "Haiti"],
+    "HTI": ["Haití", "Haiti"],                                # Sportmonks usa HTI, no HAI
     "SCO": ["Escocia", "Scotland"],
     "USA": ["Estados Unidos", "EE. UU.", "United States"],
-    "PAR": ["Paraguay"],
+    "PRY": ["Paraguay"],                                      # Sportmonks usa PRY, no PAR
     "AUS": ["Australia"],
-    "TUR": ["Turquía", "Turquia", "Turkey"],
+    "TUR": ["Turquía", "Turquia", "Turkey", "Türkiye"],
     "GER": ["Alemania", "Germany"],
     "CUW": ["Curazao", "Curaçao", "Curacao"],
     "CIV": ["Costa de Marfil", "Ivory Coast", "Côte d'Ivoire"],
@@ -347,7 +348,7 @@ _CODE_TO_NAMES: dict = {
     "IRN": ["RI de Irán", "Irán", "Iran"],
     "NZL": ["Nueva Zelanda", "New Zealand"],
     "ESP": ["España", "Espana", "Spain"],
-    "CPV": ["Islas de Cabo Verde", "Cabo Verde", "Cape Verde"],
+    "CPV": ["Islas de Cabo Verde", "Cabo Verde", "Cape Verde", "Cape Verde Islands"],
     "KSA": ["Arabia Saudí", "Arabia Saudita", "Saudi Arabia"],
     "URU": ["Uruguay"],
     "FRA": ["Francia", "France"],
@@ -355,7 +356,7 @@ _CODE_TO_NAMES: dict = {
     "IRQ": ["Irak", "Iraq"],
     "NOR": ["Noruega", "Norway"],
     "ARG": ["Argentina"],
-    "ALG": ["Argelia", "Algeria"],
+    "DZA": ["Argelia", "Algeria"],                            # Sportmonks usa DZA, no ALG
     "AUT": ["Austria"],
     "JOR": ["Jordania", "Jordan"],
     "POR": ["Portugal"],
@@ -374,6 +375,7 @@ _NAME_TO_CODE: dict = {
     for code, names in _CODE_TO_NAMES.items()
     for name in names
 }
+
 
 
 def _normalize_team_name(name: str) -> str:
@@ -410,7 +412,8 @@ def _link_unmatched_fixtures(sb) -> None:
     """
     Para cada partido en Supabase sin sportmonks_id, busca el fixture
     correspondiente en Sportmonks usando fecha + nombre de equipos.
-    Hace un fetch directo a /fixtures/season/{SM_SEASON_ID} cada vez.
+    Usa paginación (per_page=25) para obtener todos los fixtures de la temporada.
+    Ignora fixtures placeholder (equipos genéricos de eliminatoria).
     """
     unlinked_res = sb.table("matches").select(
         "id, match_date, "
@@ -423,30 +426,53 @@ def _link_unmatched_fixtures(sb) -> None:
         return
     logger.info("Intentando linkear %d partidos sin sportmonks_id", len(unlinked))
 
-    # Fetch todos los fixtures de la temporada directamente (sin caché)
+    # Fetch todos los fixtures de la temporada con paginación (max 25 por página)
+    all_season_fixtures = []
     try:
-        raw_data = _sm_get(
-            f"/fixtures/season/{SM_SEASON_ID}",
-            {"include": "participants;state", "per_page": "500"}
-        )
-        season_fixtures = raw_data.get("data") or []
-        logger.info("Sportmonks devolvió %d fixtures para la temporada %s", len(season_fixtures), SM_SEASON_ID)
+        page = 1
+        while True:
+            raw_data = _sm_get(
+                "/fixtures",
+                {
+                    "filters": f"fixtureSeasons:{SM_SEASON_ID}",
+                    "include": "participants;state",
+                    "per_page": "25",
+                    "page": str(page),
+                }
+            )
+            page_fixtures = raw_data.get("data") or []
+            all_season_fixtures.extend(page_fixtures)
+            pagination = raw_data.get("pagination") or {}
+            if not pagination.get("has_more", False):
+                break
+            page += 1
+            if page > 20:  # safety cap
+                break
+        logger.info("Sportmonks: %d fixtures totales para temporada %s (%d páginas)", len(all_season_fixtures), SM_SEASON_ID, page)
     except Exception as fetch_err:
         logger.error("Error fetching season fixtures para linking: %s", fetch_err)
         return
 
-    if not season_fixtures:
+    if not all_season_fixtures:
         logger.warning("Linking: Sportmonks no devolvió fixtures para temporada %s", SM_SEASON_ID)
         return
 
-    # Agrupar fixtures de Sportmonks por fecha
+    # Filtrar placeholders (eliminatoria sin equipos definidos aún)
+    real_fixtures = [
+        f for f in all_season_fixtures
+        if not f.get("placeholder") and all(
+            not p.get("placeholder") and p.get("short_code")
+            for p in (f.get("participants") or [])
+        )
+    ]
+    logger.info("Fixtures reales (no placeholder): %d", len(real_fixtures))
+
+    # Agrupar por fecha
     sm_by_date: dict = {}
-    for rf in season_fixtures:
-        starting_at = rf.get("starting_at") or rf.get("date") or ""
-        date_key = starting_at[:10]
-        if date_key not in sm_by_date:
-            sm_by_date[date_key] = []
-        sm_by_date[date_key].append(rf)
+    for rf in real_fixtures:
+        starting_at = rf.get("starting_at") or ""
+        dk = starting_at[:10]
+        sm_by_date.setdefault(dk, []).append(rf)
 
     linked_count = 0
     not_linked = []
@@ -471,18 +497,15 @@ def _link_unmatched_fixtures(sb) -> None:
             away_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "away"), None)
             if not home_sm or not away_sm:
                 continue
-            home_sm_code = home_sm.get("short_code", "") or home_sm.get("code", "")
-            away_sm_code = away_sm.get("short_code", "") or away_sm.get("code", "")
+            home_sm_code = home_sm.get("short_code", "") or ""
+            away_sm_code = away_sm.get("short_code", "") or ""
             if (
                 _teams_match(home_name, home_sm.get("name", ""), home_sm_code)
                 and _teams_match(away_name, away_sm.get("name", ""), away_sm_code)
             ):
                 sm_fixture_id = rf.get("id")
                 sb.table("matches").update({"sportmonks_id": sm_fixture_id}).eq("id", match["id"]).execute()
-                logger.info(
-                    "Linkeado: %s vs %s → Sportmonks ID %s",
-                    home_name, away_name, sm_fixture_id
-                )
+                logger.info("Linkeado: %s vs %s → Sportmonks ID %s", home_name, away_name, sm_fixture_id)
                 linked_count += 1
                 found = True
                 break
@@ -528,10 +551,29 @@ def sync_live_and_finished():
         from datetime import date
         today = date.today().isoformat()
         try:
-            data = _sm_get(
-                f"/fixtures/date/{today}",
-                {"filters": f"fixtureLeagues:{SM_LEAGUE_ID}", "include": "participants;scores;state"}
-            )
+            from datetime import date as _date
+            _today = _date.today().isoformat()
+            _all_today = []
+            _page = 1
+            while True:
+                _d = _sm_get(
+                    "/fixtures",
+                    {
+                        "filters": f"fixtureLeagues:{SM_LEAGUE_ID}",
+                        "include": "participants;scores;state",
+                        "per_page": "25",
+                        "page": str(_page),
+                    }
+                )
+                _chunk = _d.get("data") or []
+                _all_today.extend([x for x in _chunk if (x.get("starting_at") or "")[:10] == _today])
+                _pag = _d.get("pagination") or {}
+                if not _pag.get("has_more", False):
+                    break
+                _page += 1
+                if _page > 10:
+                    break
+            data = {"data": _all_today}
         except Exception as e:
             logger.warning("Sportmonks fixtures fetch error: %s", e)
             return
@@ -539,6 +581,8 @@ def sync_live_and_finished():
         fixtures = data.get("data") or []
         if not fixtures:
             return
+
+
 
         # ── Build a map: sportmonks_id -> parsed fixture ───────────────────
         sm_map = {f["sportmonks_id"]: f for f in [_parse_fixture(fx) for fx in fixtures]}

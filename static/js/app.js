@@ -263,7 +263,7 @@ async function loadGroups() {
 
   let groups = staticGroups;
   try {
-    const data = await apiFetch('/api/matches/standings');
+    const data = await apiFetch('/api/standings');
     if (data && data.groups && data.groups.length > 0) {
       groups = data.groups;
     }
@@ -426,6 +426,14 @@ function renderMatchCard(m, phase) {
   } else if (isLive) {
     homeScoreDisplay = `<span class="mc-score-num live">${m.home_score ?? '?'}</span>`;
     awayScoreDisplay = `<span class="mc-score-num live">${m.away_score ?? '?'}</span>`;
+    // Show provisional points if we have a prediction and real scores
+    if (pred && m.home_score != null && m.away_score != null) {
+      const prov = pred.provisional_points;
+      if (prov != null) {
+        const provLabel = prov === 10 ? '🎯 Exacto' : prov === 7 ? '✅ Empate OK' : prov === 5 ? '↔️ Diferencia' : prov === 3 ? '👍 Ganador' : '❌ Sin puntos';
+        predResultHtml = `<div class="mc-pred-badge pts-prov">⏱️ En vivo: ${provLabel} <strong>${prov} pts provisorios</strong></div>`;
+      }
+    }
   } else {
     // Upcoming: show user's predicted scores or "?"
     if (pred) {
@@ -440,7 +448,7 @@ function renderMatchCard(m, phase) {
   // VS / live / result separator
   let centerSep;
   if (isLive) {
-    centerSep = `<span class="mc-vs live-dot">🔴</span>`;
+    centerSep = `<span class="mc-vs live-dot">🔴 EN VIVO</span>`;
   } else if (isFinished) {
     centerSep = `<span class="mc-vs finished">-</span>`;
   } else {
@@ -714,7 +722,10 @@ async function loadRanking() {
           </td>
           <td style="font-size:0.85rem;color:var(--gold);font-weight:700;text-align:center">${u.exact_results || 0}</td>
           <td>
-            <div class="rank-points">${u.total_points}</div>
+            ${u.provisional_total != null && u.provisional_total !== u.total_points
+              ? `<div class="rank-points">${u.provisional_total} <span style="font-size:0.65rem;color:var(--gray)">⏱️</span></div>`
+              : `<div class="rank-points">${u.total_points}</div>`
+            }
           </td>
         </tr>
       `;

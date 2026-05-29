@@ -2218,6 +2218,14 @@ main {
   animation: cdPulse 1s ease-in-out infinite;
 }
 
+.countdown-fixture-note {
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.8);
+  text-align: center;
+  margin-top: 0.4rem;
+  line-height: 1.4;
+}
+
 @media (max-width: 768px) {
   .countdown-timer {
     font-size: 2rem;

@@ -6,6 +6,7 @@ from pydantic import BaseModel, validator
 from typing import Optional
 from database import get_supabase
 from auth_utils import get_current_user
+from datetime import datetime, timezone, timedelta
 
 router = APIRouter()
 
@@ -175,3 +176,56 @@ async def get_my_stats(current_user: dict = Depends(get_current_user)):
     }
     
     return stats
+
+
+@router.get("/users/{username}/predictions")
+async def get_rival_predictions(username: str):
+    """Predicciones públicas de un usuario (solo partidos ya no editables)"""
+    sb = get_supabase()
+
+    # Buscar el usuario por username
+    user_res = sb.table("penca_users").select("id, username, total_points").eq("username", username).single().execute()
+    if not user_res.data:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    user_data = user_res.data
+
+    # Calcular el corte: now - 30 minutos en UTC
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+
+    # Traer predicciones con info del partido
+    preds_res = sb.table("predictions").select("""
+        predicted_home_score,
+        predicted_away_score,
+        predicted_extra_time,
+        predicted_penalties,
+        points_earned,
+        match:matches(
+            id, match_date, phase, status,
+            home_score, away_score,
+            home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
+            away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url)
+        )
+    """).eq("user_id", user_data["id"]).execute()
+
+    if not preds_res.data:
+        return {"user": user_data, "predictions": []}
+
+    # Filtrar solo partidos cuya fecha ya pasó el corte de 30 min
+    visible = []
+    for p in preds_res.data:
+        m = p.get("match")
+        if not m:
+            continue
+        match_date_str = m.get("match_date", "")
+        try:
+            match_dt = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
+            if match_dt <= datetime.fromisoformat(cutoff):
+                visible.append(p)
+        except Exception:
+            pass
+
+    # Ordenar por fecha del partido ascendente
+    visible.sort(key=lambda p: p["match"]["match_date"])
+
+    return {"user": user_data, "predictions": visible}

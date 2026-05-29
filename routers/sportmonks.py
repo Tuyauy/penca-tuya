@@ -170,6 +170,15 @@ def sync_live_and_finished():
     try:
         sb = get_supabase()
 
+    # ── Lockear partidos que empiezan en menos de 30 minutos ──────────────────
+    try:
+        from datetime import datetime, timezone, timedelta
+        lock_cutoff = datetime.now(timezone.utc) + timedelta(minutes=30)
+        sb.table("matches")            .update({"predictions_locked": True})            .eq("predictions_locked", False)            .eq("status", "scheduled")            .lte("match_date", lock_cutoff.isoformat())            .execute()
+        logger.info("Auto-lock: partidos con match_date <= %s bloqueados", lock_cutoff.isoformat())
+    except Exception as lock_err:
+        logger.error("Error en auto-lock de partidos: %s", lock_err)
+
         # ── Fetch today's fixtures from Sportmonks ─────────────────────────
         from datetime import date
         today = date.today().isoformat()

@@ -228,7 +228,7 @@ function _tickCountdown() {
     if (timerEl) timerEl.classList.add('urgent');
     if (cardEl)  cardEl.classList.add('urgent');
   } else {
-    if (labelEl) labelEl.textContent = 'Próximo partido en';
+    if (labelEl) labelEl.textContent = 'Próximo partido';
     if (noteEl)  { noteEl.textContent = 'Tenés hasta 30 minutos antes del inicio de cada partido para editar tu pronóstico.'; noteEl.classList.remove('urgent'); }
     if (timerEl) timerEl.classList.remove('urgent');
     if (cardEl)  cardEl.classList.remove('urgent');
@@ -236,7 +236,7 @@ function _tickCountdown() {
 
   // ─ Fixture compact countdown ─
   if (fTimerEl) fTimerEl.innerHTML = timeHtml;
-  if (fLabelEl) fLabelEl.textContent = isUrgent ? '⚠️ Cierra pronto' : 'Próximo en';
+  if (fLabelEl) fLabelEl.textContent = isUrgent ? '⚠️ Cierra pronto' : 'Próximo partido';
   if (fMatchEl) fMatchEl.textContent = `${homeFlag} ${homeName} vs ${awayName} ${awayFlag}`;
   if (fTimerEl) { isUrgent ? fTimerEl.classList.add('urgent') : fTimerEl.classList.remove('urgent'); }
 }

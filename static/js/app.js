@@ -269,9 +269,12 @@ async function loadHomeUpcoming() {
       const dateStr = m.match_date ? formatMatchDate(m.match_date) : 'Fecha a confirmar';
       const pred = m.user_prediction;
       const isLocked = m.predictions_locked;
+      // Cierre 30 min antes del partido
+      const matchDateH = m.match_date ? new Date(m.match_date) : null;
+      const isClosed = isLocked || (matchDateH && Date.now() >= matchDateH.getTime() - 30 * 60 * 1000);
 
       let btnHtml = '';
-      if (!isLocked) {
+      if (!isClosed) {
         if (currentUser) {
           const label = pred ? '✏️ Editar pronóstico' : 'Pronosticar';
           const cls = pred ? 'home-mc-btn' : 'home-mc-btn';
@@ -279,6 +282,8 @@ async function loadHomeUpcoming() {
         } else {
           btnHtml = `<button class="home-mc-btn secondary" onclick="navigate('register')">Registrate para pronosticar</button>`;
         }
+      } else if (isClosed && !isFinished && !isLive) {
+        btnHtml = `<span class="match-closed-badge">🔒 Pronósticos cerrados</span>`;
       }
 
       return `<div class="home-match-card">
@@ -567,6 +572,9 @@ function renderMatchCard(m, phase) {
   const isFinished = m.status === 'finished';
   const isLive = m.status === 'live';
   const isLocked = m.predictions_locked;
+  // Cierre 30 min antes del partido
+  const matchDateF = m.match_date ? new Date(m.match_date) : null;
+  const isClosed = isLocked || (matchDateF && Date.now() >= matchDateF.getTime() - 30 * 60 * 1000);
 
   // Date + venue
   const dateStr = m.match_date ? formatMatchDate(m.match_date) : 'Fecha a confirmar';
@@ -622,12 +630,15 @@ function renderMatchCard(m, phase) {
 
   // Action button
   let actionHtml = '';
-  if (!isLocked && !isFinished && !isLive && currentUser) {
+  if (!isClosed && !isFinished && !isLive && currentUser) {
     const btnLabel = pred ? '✏️ Editar' : 'Pronosticar';
     const btnClass = pred ? 'mc-btn predicted' : 'mc-btn';
     actionHtml = `<button class="${btnClass}" onclick="openPredModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">${btnLabel}</button>`;
-  } else if (!currentUser && !isFinished && !isLocked && !isLive) {
+  } else if (!currentUser && !isFinished && !isClosed && !isLive) {
     actionHtml = `<button class="mc-btn" onclick="navigate('register')">Registrate para pronosticar</button>`;
+  
+  } else if (isClosed && !isFinished && !isLive) {
+    actionHtml = `<span class="match-closed-badge">🔒 Pronósticos cerrados</span>`;
   }
 
   // ET/PK note for finished KO matches

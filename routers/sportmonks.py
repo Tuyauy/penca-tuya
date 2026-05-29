@@ -158,6 +158,184 @@ def _calculate_provisional_points(pred_home: int, pred_away: int,
         return 3
     return 0
 
+# ── Mapa código ISO → nombres en Supabase (para linking) ───────────────────
+_CODE_TO_NAMES: dict = {
+    "MEX": ["México", "Mexico"],
+    "RSA": ["Sudáfrica", "Sudafrica", "South Africa"],
+    "KOR": ["Rep. de Corea", "Corea del Sur", "Korea Republic", "South Korea"],
+    "CZE": ["Chequia", "Czech Republic", "Czechia"],
+    "CAN": ["Canadá", "Canada"],
+    "BIH": ["Bosnia y Herzegovina", "Bosnia & Herzegovina", "Bosnia and Herzegovina"],
+    "QAT": ["Catar", "Qatar"],
+    "SUI": ["Suiza", "Switzerland"],
+    "BRA": ["Brasil", "Brazil"],
+    "MAR": ["Marruecos", "Morocco"],
+    "HAI": ["Haití", "Haiti"],
+    "SCO": ["Escocia", "Scotland"],
+    "USA": ["Estados Unidos", "EE. UU.", "United States"],
+    "PAR": ["Paraguay"],
+    "AUS": ["Australia"],
+    "TUR": ["Turquía", "Turquia", "Turkey"],
+    "GER": ["Alemania", "Germany"],
+    "CUW": ["Curazao", "Curaçao", "Curacao"],
+    "CIV": ["Costa de Marfil", "Ivory Coast", "Côte d'Ivoire"],
+    "ECU": ["Ecuador"],
+    "NED": ["Países Bajos", "Paises Bajos", "Netherlands"],
+    "JPN": ["Japón", "Japan"],
+    "SWE": ["Suecia", "Sweden"],
+    "TUN": ["Túnez", "Tunez", "Tunisia"],
+    "BEL": ["Bélgica", "Belgica", "Belgium"],
+    "EGY": ["Egipto", "Egypt"],
+    "IRN": ["RI de Irán", "Irán", "Iran"],
+    "NZL": ["Nueva Zelanda", "New Zealand"],
+    "ESP": ["España", "Espana", "Spain"],
+    "CPV": ["Islas de Cabo Verde", "Cabo Verde", "Cape Verde"],
+    "KSA": ["Arabia Saudí", "Arabia Saudita", "Saudi Arabia"],
+    "URU": ["Uruguay"],
+    "FRA": ["Francia", "France"],
+    "SEN": ["Senegal"],
+    "IRQ": ["Irak", "Iraq"],
+    "NOR": ["Noruega", "Norway"],
+    "ARG": ["Argentina"],
+    "ALG": ["Argelia", "Algeria"],
+    "AUT": ["Austria"],
+    "JOR": ["Jordania", "Jordan"],
+    "POR": ["Portugal"],
+    "COD": ["RD Congo", "Congo DR", "DR Congo", "Democratic Republic of Congo"],
+    "UZB": ["Uzbekistán", "Uzbekistan"],
+    "COL": ["Colombia"],
+    "ENG": ["Inglaterra", "England"],
+    "CRO": ["Croacia", "Croatia"],
+    "GHA": ["Ghana"],
+    "PAN": ["Panamá", "Panama"],
+}
+
+# Mapa inverso: nombre_lower → código
+_NAME_TO_CODE: dict = {
+    name.lower(): code
+    for code, names in _CODE_TO_NAMES.items()
+    for name in names
+}
+
+# Caché de 24 horas para fixtures raw de la temporada completa
+_RAW_SEASON_CACHE: list = []
+_RAW_SEASON_TS: float = 0.0
+_SEASON_CACHE_TTL = 86400  # 24 horas en segundos
+
+
+def _normalize_team_name(name: str) -> str:
+    """Normaliza un nombre de equipo para comparación (sin tildes, lowercase)."""
+    import unicodedata
+    nfkd = unicodedata.normalize("NFKD", name or "")
+    ascii_str = nfkd.encode("ascii", "ignore").decode("ascii")
+    return ascii_str.lower().strip()
+
+
+def _teams_match(sb_name: str, sm_name: str, sm_code: str) -> bool:
+    """Determina si un equipo de Supabase matchea un equipo de Sportmonks."""
+    sb_norm = _normalize_team_name(sb_name)
+    sm_norm = _normalize_team_name(sm_name or "")
+    sm_code_up = (sm_code or "").upper()
+
+    if sb_norm and sm_norm:
+        if sb_norm in sm_norm or sm_norm in sb_norm:
+            return True
+
+    if sm_code_up and sm_code_up in _CODE_TO_NAMES:
+        known_norms = [_normalize_team_name(n) for n in _CODE_TO_NAMES[sm_code_up]]
+        if sb_norm in known_norms or any(sb_norm in n or n in sb_norm for n in known_norms):
+            return True
+
+    if sb_norm in _NAME_TO_CODE:
+        if _NAME_TO_CODE[sb_norm] == sm_code_up:
+            return True
+
+    return False
+
+
+def _link_unmatched_fixtures(sb) -> None:
+    """
+    Para cada partido en Supabase sin sportmonks_id, busca el fixture
+    correspondiente en Sportmonks usando fecha + nombre de equipos.
+    """
+    global _RAW_SEASON_CACHE, _RAW_SEASON_TS
+
+    unlinked_res = sb.table("matches").select(
+        "id, match_date, "
+        "home_team:teams!matches_home_team_id_fkey(name, code), "
+        "away_team:teams!matches_away_team_id_fkey(name, code)"
+    ).is_("sportmonks_id", "null").execute()
+    unlinked = unlinked_res.data or []
+    if not unlinked:
+        return
+
+    logger.info("Linking: %d partidos sin sportmonks_id", len(unlinked))
+
+    now_ts = time.time()
+    if not _RAW_SEASON_CACHE or (now_ts - _RAW_SEASON_TS) >= _SEASON_CACHE_TTL:
+        try:
+            raw_data = _sm_get(
+                f"/fixtures/seasons/{SM_SEASON_ID}",
+                {"include": "participants;state", "per_page": "500"}
+            )
+            _RAW_SEASON_CACHE = raw_data.get("data") or []
+            _RAW_SEASON_TS = now_ts
+            logger.info("Season fixtures cacheados: %d fixtures", len(_RAW_SEASON_CACHE))
+        except Exception as fetch_err:
+            logger.error("Error fetching season fixtures para linking: %s", fetch_err)
+            return
+
+    if not _RAW_SEASON_CACHE:
+        return
+
+    sm_by_date: dict = {}
+    for rf in _RAW_SEASON_CACHE:
+        starting_at = rf.get("starting_at") or rf.get("date") or ""
+        date_key = starting_at[:10]
+        if date_key not in sm_by_date:
+            sm_by_date[date_key] = []
+        sm_by_date[date_key].append(rf)
+
+    linked_count = 0
+    for match in unlinked:
+        raw_md = match.get("match_date") or ""
+        if not raw_md:
+            continue
+        date_key = raw_md[:10]
+        candidates = sm_by_date.get(date_key, [])
+        if not candidates:
+            continue
+
+        home_name = (match.get("home_team") or {}).get("name", "")
+        away_name = (match.get("away_team") or {}).get("name", "")
+
+        for rf in candidates:
+            participants = rf.get("participants") or []
+            home_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "home"), None)
+            away_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "away"), None)
+            if not home_sm or not away_sm:
+                continue
+
+            home_sm_code = home_sm.get("short_code", "") or home_sm.get("code", "")
+            away_sm_code = away_sm.get("short_code", "") or away_sm.get("code", "")
+
+            if (_teams_match(home_name, home_sm.get("name", ""), home_sm_code) and
+                    _teams_match(away_name, away_sm.get("name", ""), away_sm_code)):
+                sm_fixture_id = rf.get("id")
+                sb.table("matches").update({"sportmonks_id": sm_fixture_id}).eq("id", match["id"]).execute()
+                logger.info(
+                    "Linked match %s (%s vs %s) → Sportmonks fixture %s",
+                    match["id"], home_name, away_name, sm_fixture_id
+                )
+                linked_count += 1
+                break
+
+    if linked_count:
+        logger.info("Linking completado: %d partidos linkeados", linked_count)
+    else:
+        logger.info("Linking: ningun partido nuevo linkeado")
+
+
 def sync_live_and_finished():
     """
     Called every 2 minutes by APScheduler.
@@ -178,6 +356,13 @@ def sync_live_and_finished():
         logger.info("Auto-lock: partidos con match_date <= %s bloqueados", lock_cutoff.isoformat())
     except Exception as lock_err:
         logger.error("Error en auto-lock de partidos: %s", lock_err)
+
+        # ── Linking: asignar sportmonks_id a partidos sin él ────────────────
+        try:
+            _link_unmatched_fixtures(sb)
+        except Exception as link_err:
+            logger.error("Error en linking de partidos: %s", link_err)
+
 
         # ── Fetch today's fixtures from Sportmonks ─────────────────────────
         from datetime import date

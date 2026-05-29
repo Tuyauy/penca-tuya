@@ -231,7 +231,7 @@ function _tickCountdown() {
     if (cardEl)  cardEl.classList.add('urgent');
   } else {
     if (labelEl) labelEl.textContent = 'Próximo partido';
-    if (noteEl)  { noteEl.textContent = 'Tenés hasta 30 minutos antes del inicio de cada partido para editar tu pronóstico.'; noteEl.classList.remove('urgent'); }
+    if (noteEl)  { noteEl.textContent = 'Tenés hasta 30 minutos antes del inicio de cada partido para hacer tu pronóstico.'; noteEl.classList.remove('urgent'); }
     if (timerEl) timerEl.classList.remove('urgent');
     if (cardEl)  cardEl.classList.remove('urgent');
   }

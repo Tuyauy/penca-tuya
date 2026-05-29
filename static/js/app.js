@@ -97,6 +97,7 @@ function navigate(page, param) {
   const target = document.getElementById(`page-${page}`);
   if (target) {
     target.classList.add('active');
+    target.style.removeProperty('display');
     window.scrollTo(0, 0);
     window.location.hash = page;
   }
@@ -424,7 +425,7 @@ async function loadGroups() {
     'PAR': '🇵🇾', 'CUW': '🇨🇼', 'CIV': '🇨🇮', 'SWE': '🇸🇪',
     'TUN': '🇹🇳', 'EGY': '🇪🇬', 'NZL': '🇳🇿', 'CPV': '🇨🇻',
     'NOR': '🇳🇴', 'ALG': '🇩🇿', 'JOR': '🇯🇴', 'COD': '🇨🇩',
-    'GHA': '🇬🇭'
+    'GHA': '🇬🇭', 'RSA': '🇿🇦', 'KOR': '🇰🇷', 'CZE': '🇨🇿', 'KSA': '🇸🇦'
   };
 
   function getFlag(code) {
@@ -435,8 +436,11 @@ async function loadGroups() {
   let groups = staticGroups;
   try {
     const data = await apiFetch('/api/standings');
-    if (data && data.groups && data.groups.length > 0) {
-      groups = data.groups;
+    if (
+        data && Array.isArray(data.groups) && data.groups.length > 0 &&
+        data.groups[0] && data.groups[0].group && Array.isArray(data.groups[0].teams)
+      ) {
+        groups = data.groups;
     }
   } catch (e) {
     // Use static fallback
@@ -885,7 +889,7 @@ async function loadRanking() {
       const medal = medals[pos] || pos;
       const cls = posClass[pos] || '';
       return `
-        <tr class="${isMe ? 'rank-highlight' : ''}" style="cursor:pointer" onclick="navigate('rival', '${escHtml(u.username)}')" title="Ver pronósticos de ${escHtml(u.username)}">
+        <tr class="${isMe ? 'rank-highlight' : ''}" data-username="${escHtml(u.username)}" style="cursor:pointer" onclick="navigate('rival', this.dataset.username)" title="Ver pronósticos de ${escHtml(u.username)}">
           <td><span class="rank-pos ${cls}">${medal}</span></td>
           <td>
             <div class="rank-username">${escHtml(u.username)}${isMe ? ' <small style="color:var(--gold)">← vos</small>' : ''}</div>
@@ -1542,7 +1546,7 @@ async function loadRivalProfile(username) {
     `;
 
     if (preds.length === 0) {
-      listEl.innerHTML = '<p class="empty-state">Este jugador aún no tiene pronósticos visibles.</p>';
+      listEl.innerHTML = '<p class="empty-state">Todavía no hay partidos jugados para mostrar los pronósticos de este jugador.</p>';
       return;
     }
 

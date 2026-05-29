@@ -2369,3 +2369,189 @@ main {
     padding: 1.5rem 1rem;
   }
 }
+
+
+/* ===== RIVAL PROFILE ===== */
+.btn-back-ranking {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #aaa;
+  font-family: var(--font-display);
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  margin-bottom: 1rem;
+  display: inline-block;
+  transition: color 0.2s, border-color 0.2s;
+}
+.btn-back-ranking:hover {
+  color: var(--celeste);
+  border-color: var(--celeste);
+}
+
+.rival-header {
+  margin-top: 0.5rem;
+}
+
+.rival-user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.rival-pts-badge {
+  background: var(--gold);
+  color: #000;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 0.3rem 0.9rem;
+  border-radius: 999px;
+}
+
+.rival-predictions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem 0 3rem;
+}
+
+.rival-pred-card {
+  background: var(--card-bg, #1e1d22);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rival-match-date {
+  font-size: 0.75rem;
+  color: var(--gray);
+  letter-spacing: 0.5px;
+}
+
+.rival-teams {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rival-team {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.rival-team.home {
+  justify-content: flex-end;
+  text-align: right;
+  flex-direction: row-reverse;
+}
+
+.rival-team.away {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.rival-flag {
+  width: 24px;
+  height: 16px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.rival-scores {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 90px;
+}
+
+.rival-pred-score {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--celeste);
+  letter-spacing: 1px;
+}
+
+.rival-real-score {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--white);
+  letter-spacing: 1px;
+}
+
+.rival-real-score.pending {
+  font-size: 0.75rem;
+  color: var(--gray);
+  font-family: inherit;
+}
+
+.rival-score-labels {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  color: var(--gray);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.rival-score-labels span {
+  min-width: 45px;
+  text-align: center;
+}
+
+.rival-pts {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+.rival-pts small {
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--gray);
+}
+
+/* Ranking rows clickable */
+.ranking-table tbody tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ranking-table tbody tr:hover {
+  background: rgba(116, 192, 232, 0.06);
+}
+
+@media (max-width: 768px) {
+  .rival-teams {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 0.5rem;
+  }
+  .rival-team {
+    font-size: 0.8rem;
+  }
+  .rival-scores {
+    min-width: 70px;
+  }
+  .rival-pred-score {
+    font-size: 1.1rem;
+  }
+}

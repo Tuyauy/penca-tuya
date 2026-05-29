@@ -2100,6 +2100,14 @@ main {
   font-size: 0.9rem;
   color: #fff;
   margin-bottom: 0.75rem;
+  line-height: 1.6;
+  min-height: 1.2rem;
+}
+
+.countdown-match-info {
+  font-size: 0.9rem;
+  color: #fff;
+  margin-bottom: 0.75rem;
   line-height: 1.5;
 }
 

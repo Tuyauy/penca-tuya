@@ -146,15 +146,84 @@ async def get_standings():
 async def admin_link_fixtures():
     """
     Diagnostic linking endpoint.
-    Tries 4 Sportmonks endpoints in order to fetch season fixtures,
-    then attempts to match unlinked Supabase matches. Returns full diagnostics.
+    Step 0: Lists all seasons for league 732 so we can verify the correct season ID.
+    Step 1: Tries 3 fixture endpoints filtered by season 26618, captures URL+status+count+sample dates.
+    Step 2: Links unlinked Supabase matches using the first working endpoint.
     """
     if not SM_API_KEY:
         return {"ok": False, "error": "SPORTMONKS_API_KEY not configured"}
+
+    import httpx as _httpx
+
+    def _raw_get(path, params=None):
+        """Direct HTTP GET, returns (status_code, json_body)."""
+        headers = {"Authorization": SM_API_KEY}
+        url = f"{SM_BASE}{path}"
+        p = {**(params or {})}
+        resp = _httpx.get(url, headers=headers, params=p, timeout=15)
+        try:
+            body = resp.json()
+        except Exception:
+            body = {}
+        return resp.status_code, body
+
     try:
         sb = get_supabase()
 
-        # ── 1. Fetch unlinked matches from Supabase ──────────────────────────
+        # ── Step 0: list seasons for league 732 ──────────────────────────────
+        seasons_info = []
+        seasons_error = None
+        try:
+            sc, sbody = _raw_get("/seasons", {"filters": f"leagueId:{SM_LEAGUE_ID}", "per_page": "50"})
+            if sc == 200:
+                for s in (sbody.get("data") or []):
+                    seasons_info.append({
+                        "id": s.get("id"),
+                        "name": s.get("name"),
+                        "league_id": s.get("league_id"),
+                        "starting_at": s.get("starting_at"),
+                        "ending_at": s.get("ending_at"),
+                    })
+            else:
+                seasons_error = f"status {sc}: {str(sbody)[:200]}"
+        except Exception as se:
+            seasons_error = str(se)
+
+        # ── Step 1: try 3 fixture endpoints filtered by season ────────────────
+        fixture_attempts = []
+        sm_fixtures = []
+        working_endpoint = None
+
+        endpoints_to_try = [
+            ("/fixtures", {"filters": f"fixtureSeasons:{SM_SEASON_ID}", "include": "participants;state", "per_page": "500"}),
+            ("/fixtures", {"filters": f"fixtureLeagues:{SM_LEAGUE_ID};fixtureSeason:{SM_SEASON_ID}", "include": "participants;state", "per_page": "500"}),
+            (f"/seasons/{SM_SEASON_ID}/fixtures", {"include": "participants;state", "per_page": "500"}),
+        ]
+
+        for path, params in endpoints_to_try:
+            full_url = f"{SM_BASE}{path}"
+            try:
+                sc, body = _raw_get(path, params)
+                data = body.get("data") or []
+                sample_dates = sorted({
+                    (f.get("starting_at") or f.get("date") or "")[:10]
+                    for f in data[:50] if (f.get("starting_at") or f.get("date") or "")[:4]
+                })
+                attempt = {
+                    "url": full_url,
+                    "params": params,
+                    "status": sc,
+                    "fixtures_returned": len(data),
+                    "sample_dates": sample_dates[:10],
+                }
+                fixture_attempts.append(attempt)
+                if sc == 200 and data and working_endpoint is None:
+                    sm_fixtures = data
+                    working_endpoint = full_url
+            except Exception as req_err:
+                fixture_attempts.append({"url": full_url, "params": params, "status": "exception", "error": str(req_err)})
+
+        # ── Step 2: fetch unlinked + attempt linking ──────────────────────────
         unlinked_res = sb.table("matches").select(
             "id, match_date, "
             "home_team:teams!matches_home_team_id_fkey(name, code), "
@@ -162,45 +231,12 @@ async def admin_link_fixtures():
         ).is_("sportmonks_id", "null").execute()
         unlinked = unlinked_res.data or []
 
-        # ── 2. Try 4 endpoints in order ───────────────────────────────────────
-        endpoints_tried = []
-        sm_fixtures = []
-        working_endpoint = None
-
-        candidates_to_try = [
-            (f"/fixtures/season/{SM_SEASON_ID}",   {"include": "participants;state", "per_page": "500"}),
-            (f"/seasons/{SM_SEASON_ID}/fixtures",   {"include": "participants;state", "per_page": "500"}),
-            ("/fixtures",                            {"filters": f"fixtureLeagues:{SM_LEAGUE_ID}", "include": "participants;state", "per_page": "500"}),
-            (f"/leagues/{SM_LEAGUE_ID}/fixtures",   {"include": "participants;state", "per_page": "500"}),
-        ]
-
-        for path, params in candidates_to_try:
-            full_url = f"{SM_BASE}{path}"
-            try:
-                import httpx as _httpx
-                headers = {"Authorization": SM_API_KEY}
-                p = {"include": "", **params}
-                resp = _httpx.get(full_url, headers=headers, params=p, timeout=10)
-                status = resp.status_code
-                if status == 200:
-                    data = resp.json().get("data") or []
-                    endpoints_tried.append({"url": full_url, "params": params, "status": status, "fixtures_returned": len(data)})
-                    sm_fixtures = data
-                    working_endpoint = full_url
-                    break
-                else:
-                    endpoints_tried.append({"url": full_url, "params": params, "status": status, "fixtures_returned": 0})
-            except Exception as req_err:
-                endpoints_tried.append({"url": full_url, "params": params, "status": "exception", "error": str(req_err)})
-
-        # ── 3. Group SM fixtures by date ──────────────────────────────────────
         sm_by_date: dict = {}
         for rf in sm_fixtures:
             starting_at = rf.get("starting_at") or rf.get("date") or ""
             dk = starting_at[:10]
             sm_by_date.setdefault(dk, []).append(rf)
 
-        # ── 4. Attempt linking, collect debug for first 3 failures ────────────
         linked_count = 0
         debug_failures = []
 
@@ -249,7 +285,9 @@ async def admin_link_fixtures():
 
         return {
             "ok": True,
-            "endpoints_tried": endpoints_tried,
+            "seasons_for_league_732": seasons_info,
+            "seasons_error": seasons_error,
+            "fixture_attempts": fixture_attempts,
             "working_endpoint": working_endpoint,
             "sm_fixtures_fetched": len(sm_fixtures),
             "sm_dates_with_fixtures": sorted(sm_by_date.keys()),

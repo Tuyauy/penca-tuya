@@ -9,10 +9,19 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 
-from routers import auth, matches, predictions, ranking, admin, purchases
+from routers import auth, matches, predictions, ranking, admin, purchases, sportmonks
 from database import get_supabase
 
 load_dotenv()
+
+# ── APScheduler for auto-sync ─────────────────────────────────────────────────
+try:
+    from apscheduler.schedulers.background import BackgroundScheduler
+    _scheduler = BackgroundScheduler(daemon=True)
+    _scheduler_enabled = True
+except ImportError:
+    _scheduler = None
+    _scheduler_enabled = False
 
 app = FastAPI(
     title="Penca TUYA Mundial 2026",
@@ -35,6 +44,15 @@ app.include_router(predictions.router, prefix="/api/predictions", tags=["predict
 app.include_router(ranking.router, prefix="/api/ranking", tags=["ranking"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(purchases.router, prefix="/api/purchases", tags=["purchases"])
+app.include_router(sportmonks.router, prefix="/api", tags=["sportmonks"])
+
+# ── Startup event: launch APScheduler ────────────────────────────────────────
+@app.on_event("startup")
+async def startup_event():
+    if _scheduler_enabled and _scheduler:
+        from routers.sportmonks import sync_live_and_finished
+        _scheduler.add_job(sync_live_and_finished, "interval", minutes=2, id="sm_sync", replace_existing=True)
+        _scheduler.start()
 
 # Servir JS y CSS sin caché para que los cambios se apliquen siempre
 @app.get("/static/js/app.js")

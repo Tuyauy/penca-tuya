@@ -101,46 +101,84 @@ async def get_livescores():
         logger.error("Sportmonks livescores error: %s", e)
         return {"live": [], "error": str(e)}
 
-# ── /api/standings ────────────────────────────────────────────────────────────
+# ── /api/standings ──────────────────────────────────────────────────────────
+# Sportmonks detail type_ids for standings (verified against API):
+# 129=overall-matches-played, 130=overall-won, 131=overall-draw, 132=overall-lost
+# 133=overall-goals-scored, 134=overall-goals-against
+_SM_DETAIL = {
+    "played":   129,
+    "won":      130,
+    "draw":     131,
+    "lost":     132,
+    "gf":       133,
+    "ga":       134,
+}
+_STANDINGS_CACHE_TTL = 300  # 5 minutes
+
 @router.get("/standings")
 async def get_standings():
-    """Return group standings from Sportmonks (60s cache)."""
+    """Return group standings from Sportmonks (5-min cache)."""
     if not SM_API_KEY:
         return {"groups": [], "error": "SPORTMONKS_API_KEY not configured"}
     try:
         def fetch():
-            data = _sm_get(
+            # Fetch all 48 group-stage standing entries (48 = 12 groups × 4 teams)
+            raw_data = _sm_get(
                 f"/standings/seasons/{SM_SEASON_ID}",
-                {"include": "participant"}
+                {"include": "participant;details.type;group", "per_page": "50"}
             )
-            raw_standings = data.get("data") or []
-            groups = {}
+            raw_standings = raw_data.get("data") or []
+
+            groups: dict = {}
             for entry in raw_standings:
-                grp_name = entry.get("group_name") or entry.get("round_name") or "?"
-                # Sportmonks uses single letter or "Group A" etc.
-                grp_letter = grp_name.replace("Group ", "").strip()
-                if grp_letter not in groups:
-                    groups[grp_letter] = {"group": grp_letter, "teams": []}
+                # Group name from the nested group object
+                grp_obj = entry.get("group") or {}
+                grp_raw = grp_obj.get("name") or entry.get("group_name") or "?"
+                grp_letter = grp_raw.replace("Group ", "").strip()
+
+                # Stats from details array keyed by type_id
+                detail_map = {d["type_id"]: d["value"] for d in (entry.get("details") or [])}
+
                 participant = entry.get("participant") or {}
-                groups[grp_letter]["teams"].append({
+                team_entry = {
                     "name": participant.get("name", "?"),
                     "code": participant.get("short_code", "???"),
-                    "p":   entry.get("games_played", 0),
-                    "w":   entry.get("won", 0),
-                    "d":   entry.get("draw", 0),
-                    "l":   entry.get("lost", 0),
-                    "gf":  entry.get("goals_scored", 0),
-                    "ga":  entry.get("goals_against", 0),
-                    "pts": entry.get("points", 0),
-                })
-                # Sort each group by pts desc, then goal diff
+                    "p":    detail_map.get(_SM_DETAIL["played"], 0),
+                    "w":    detail_map.get(_SM_DETAIL["won"],    0),
+                    "d":    detail_map.get(_SM_DETAIL["draw"],   0),
+                    "l":    detail_map.get(_SM_DETAIL["lost"],   0),
+                    "gf":   detail_map.get(_SM_DETAIL["gf"],     0),
+                    "ga":   detail_map.get(_SM_DETAIL["ga"],     0),
+                    "pts":  entry.get("points", 0),
+                }
+                if grp_letter not in groups:
+                    groups[grp_letter] = {"group": grp_letter, "teams": []}
+                groups[grp_letter]["teams"].append(team_entry)
+
+            # Sort each group by pts desc, then goal diff, then goals scored
             for g in groups.values():
-                g["teams"].sort(key=lambda t: (-(t["pts"]), -((t["gf"]-t["ga"])), -(t["gf"])))
+                g["teams"].sort(key=lambda t: (
+                    -(t["pts"]),
+                    -((t["gf"] - t["ga"])),
+                    -(t["gf"])
+                ))
             return sorted(groups.values(), key=lambda g: g["group"])
-        return {"groups": _cached("standings", fetch)}
+
+        # Use 5-minute cache
+        now = time.time()
+        cache_key = "standings_v2"
+        if cache_key in _cache:
+            ts, cached = _cache[cache_key]
+            if now - ts < _STANDINGS_CACHE_TTL:
+                return {"groups": cached}
+        result = fetch()
+        _cache[cache_key] = (now, result)
+        return {"groups": result}
     except Exception as e:
         logger.error("Sportmonks standings error: %s", e)
         return {"groups": [], "error": str(e)}
+
+
 # ── /api/admin/link-fixtures ────────────────────────────────────────────────
 @router.get("/admin/link-fixtures")
 async def admin_link_fixtures():
@@ -519,6 +557,133 @@ def _link_unmatched_fixtures(sb) -> None:
         logger.warning("No se pudo linkear: %s", nl)
 
 
+def _sync_standings_to_db(sb) -> None:
+    """
+    Fetch current standings from Sportmonks and upsert into group_standings table.
+    Called after a group match finishes.
+    """
+    try:
+        raw_data = _sm_get(
+            f"/standings/seasons/{SM_SEASON_ID}",
+            {"include": "participant;details.type;group", "per_page": "50"}
+        )
+        raw_standings = raw_data.get("data") or []
+        if not raw_standings:
+            return
+
+        # Fetch team IDs from Supabase (code → id)
+        teams_res = sb.table("teams").select("id, code").execute()
+        code_to_id = {t["code"]: t["id"] for t in (teams_res.data or [])}
+
+        rows = []
+        for entry in raw_standings:
+            grp_obj = entry.get("group") or {}
+            grp_name = (grp_obj.get("name") or "").replace("Group ", "").strip()
+            if not grp_name:
+                continue
+            participant = entry.get("participant") or {}
+            sm_code = participant.get("short_code", "")
+            # Map SM code to Supabase code via _CODE_TO_NAMES
+            team_id = code_to_id.get(sm_code)
+            if not team_id:
+                # Try by name match
+                sm_name = participant.get("name", "")
+                for sb_code, sb_id in code_to_id.items():
+                    for alias in _CODE_TO_NAMES.get(sm_code, []):
+                        if _normalize_team_name(alias) == _normalize_team_name(sm_name):
+                            team_id = sb_id
+                            break
+                    if team_id:
+                        break
+            if not team_id:
+                continue
+
+            detail_map = {d["type_id"]: d["value"] for d in (entry.get("details") or [])}
+            rows.append({
+                "group_name": grp_name,
+                "team_id": team_id,
+                "position": entry.get("position", 0),
+                "played":  detail_map.get(129, 0),
+                "won":     detail_map.get(130, 0),
+                "drawn":   detail_map.get(131, 0),
+                "lost":    detail_map.get(132, 0),
+                "goals_for":     detail_map.get(133, 0),
+                "goals_against": detail_map.get(134, 0),
+                "points":  entry.get("points", 0),
+            })
+
+        if rows:
+            sb.table("group_standings").upsert(rows, on_conflict="group_name,team_id").execute()
+            logger.info("group_standings actualizado: %d filas", len(rows))
+    except Exception as e:
+        logger.error("_sync_standings_to_db error: %s", e)
+
+
+def _update_ko_placeholders(sb) -> None:
+    """
+    Check Sportmonks for KO fixtures that now have real teams (no longer placeholder).
+    Update home_team_id and away_team_id in Supabase matches.
+    """
+    try:
+        # Fetch KO fixtures from SM (non-group stage, may now have real teams)
+        all_fixtures = []
+        page = 1
+        while True:
+            raw = _sm_get(
+                "/fixtures",
+                {"filters": f"fixtureSeasons:{SM_SEASON_ID}", "include": "participants;state", "per_page": "25", "page": str(page)}
+            )
+            chunk = raw.get("data") or []
+            all_fixtures.extend(chunk)
+            if not (raw.get("pagination") or {}).get("has_more", False):
+                break
+            page += 1
+            if page > 20:
+                break
+
+        # Only care about non-placeholder KO fixtures
+        ko_real = [
+            f for f in all_fixtures
+            if not f.get("placeholder")
+            and f.get("group_id") is None  # group_id=null means it's a KO fixture
+            and all(not p.get("placeholder") and p.get("short_code") for p in (f.get("participants") or []))
+        ]
+        if not ko_real:
+            return
+
+        # Load our KO matches that don't have teams yet
+        ko_phases = ["r16", "qf", "sf", "third", "final"]
+        our_ko = sb.table("matches").select("id, sportmonks_id, phase").in_("phase", ko_phases).is_("home_team_id", "null").execute()
+        if not (our_ko.data or []):
+            return
+
+        # Fetch team code→id map
+        teams_res = sb.table("teams").select("id, code, name").execute()
+        code_to_id = {t["code"]: t["id"] for t in (teams_res.data or [])}
+
+        sm_map = {f["id"]: f for f in ko_real}
+        for match in (our_ko.data or []):
+            sm_id = match.get("sportmonks_id")
+            if not sm_id or sm_id not in sm_map:
+                continue
+            f = sm_map[sm_id]
+            participants = f.get("participants") or []
+            home_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "home"), None)
+            away_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "away"), None)
+            if not home_sm or not away_sm:
+                continue
+            home_id = code_to_id.get(home_sm.get("short_code", ""))
+            away_id = code_to_id.get(away_sm.get("short_code", ""))
+            if home_id and away_id:
+                sb.table("matches").update({
+                    "home_team_id": home_id,
+                    "away_team_id": away_id,
+                }).eq("id", match["id"]).execute()
+                logger.info("KO match %s updated: %s vs %s", match["id"], home_sm.get("name"), away_sm.get("name"))
+    except Exception as e:
+        logger.error("_update_ko_placeholders error: %s", e)
+
+
 def sync_live_and_finished():
     """
     Called every 2 minutes by APScheduler.
@@ -646,6 +811,19 @@ def sync_live_and_finished():
                     sb.rpc("calculate_match_points", {"match_id_param": match_id}).execute()
                 except Exception as calc_e:
                     logger.error("calculate_match_points failed for match %s: %s", match_id, calc_e)
+
+        # ── After a group match finishes: sync standings + KO placeholders ──
+        if sm["status"] == "finished" and om.get("status") != "finished":
+            if om.get("phase") == "group":
+                try:
+                    _sync_standings_to_db(sb)
+                except Exception as std_e:
+                    logger.error("standings sync error: %s", std_e)
+                try:
+                    _update_ko_placeholders(sb)
+                except Exception as ko_e:
+                    logger.error("ko placeholder update error: %s", ko_e)
+
 
         # ── Rebuild provisional_total for affected users ───────────────────
         _refresh_provisional_totals(sb, [om["id"] for om in our_matches])

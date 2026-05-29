@@ -144,13 +144,17 @@ async def get_standings():
 # ── /api/admin/link-fixtures ────────────────────────────────────────────────
 @router.get("/admin/link-fixtures")
 async def admin_link_fixtures():
-    """Diagnostic linking: returns full details of what Sportmonks returned and why matches failed."""
+    """
+    Diagnostic linking endpoint.
+    Tries 4 Sportmonks endpoints in order to fetch season fixtures,
+    then attempts to match unlinked Supabase matches. Returns full diagnostics.
+    """
     if not SM_API_KEY:
         return {"ok": False, "error": "SPORTMONKS_API_KEY not configured"}
     try:
         sb = get_supabase()
 
-        # 1. Fetch unlinked matches from Supabase
+        # ── 1. Fetch unlinked matches from Supabase ──────────────────────────
         unlinked_res = sb.table("matches").select(
             "id, match_date, "
             "home_team:teams!matches_home_team_id_fkey(name, code), "
@@ -158,26 +162,45 @@ async def admin_link_fixtures():
         ).is_("sportmonks_id", "null").execute()
         unlinked = unlinked_res.data or []
 
-        # 2. Fetch all season fixtures from Sportmonks
+        # ── 2. Try 4 endpoints in order ───────────────────────────────────────
+        endpoints_tried = []
         sm_fixtures = []
-        sm_error = None
-        try:
-            raw_data = _sm_get(
-                f"/fixtures/season/{SM_SEASON_ID}",
-                {"include": "participants;state", "per_page": "500"}
-            )
-            sm_fixtures = raw_data.get("data") or []
-        except Exception as fe:
-            sm_error = str(fe)
+        working_endpoint = None
 
-        # 3. Group SM fixtures by date
+        candidates_to_try = [
+            (f"/fixtures/season/{SM_SEASON_ID}",   {"include": "participants;state", "per_page": "500"}),
+            (f"/seasons/{SM_SEASON_ID}/fixtures",   {"include": "participants;state", "per_page": "500"}),
+            ("/fixtures",                            {"filters": f"fixtureLeagues:{SM_LEAGUE_ID}", "include": "participants;state", "per_page": "500"}),
+            (f"/leagues/{SM_LEAGUE_ID}/fixtures",   {"include": "participants;state", "per_page": "500"}),
+        ]
+
+        for path, params in candidates_to_try:
+            full_url = f"{SM_BASE}{path}"
+            try:
+                import httpx as _httpx
+                headers = {"Authorization": SM_API_KEY}
+                p = {"include": "", **params}
+                resp = _httpx.get(full_url, headers=headers, params=p, timeout=10)
+                status = resp.status_code
+                if status == 200:
+                    data = resp.json().get("data") or []
+                    endpoints_tried.append({"url": full_url, "params": params, "status": status, "fixtures_returned": len(data)})
+                    sm_fixtures = data
+                    working_endpoint = full_url
+                    break
+                else:
+                    endpoints_tried.append({"url": full_url, "params": params, "status": status, "fixtures_returned": 0})
+            except Exception as req_err:
+                endpoints_tried.append({"url": full_url, "params": params, "status": "exception", "error": str(req_err)})
+
+        # ── 3. Group SM fixtures by date ──────────────────────────────────────
         sm_by_date: dict = {}
         for rf in sm_fixtures:
             starting_at = rf.get("starting_at") or rf.get("date") or ""
             dk = starting_at[:10]
             sm_by_date.setdefault(dk, []).append(rf)
 
-        # 4. Try to link each unlinked match, collect diagnostics for first 3 failures
+        # ── 4. Attempt linking, collect debug for first 3 failures ────────────
         linked_count = 0
         debug_failures = []
 
@@ -186,10 +209,10 @@ async def admin_link_fixtures():
             date_key = raw_md[:10]
             home_name = (match.get("home_team") or {}).get("name", "")
             away_name = (match.get("away_team") or {}).get("name", "")
-            candidates = sm_by_date.get(date_key, [])
+            day_candidates = sm_by_date.get(date_key, [])
 
             found = False
-            for rf in candidates:
+            for rf in day_candidates:
                 participants = rf.get("participants") or []
                 home_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "home"), None)
                 away_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "away"), None)
@@ -207,27 +230,28 @@ async def admin_link_fixtures():
                     break
 
             if not found and len(debug_failures) < 3:
-                candidate_names = [
+                first_candidates = [
                     {
                         "sm_home": next((p.get("name") for p in (rf.get("participants") or []) if (p.get("meta") or {}).get("location") == "home"), None),
                         "sm_home_code": next((p.get("short_code") or p.get("code") for p in (rf.get("participants") or []) if (p.get("meta") or {}).get("location") == "home"), None),
                         "sm_away": next((p.get("name") for p in (rf.get("participants") or []) if (p.get("meta") or {}).get("location") == "away"), None),
                         "sm_away_code": next((p.get("short_code") or p.get("code") for p in (rf.get("participants") or []) if (p.get("meta") or {}).get("location") == "away"), None),
                     }
-                    for rf in candidates[:5]
+                    for rf in day_candidates[:5]
                 ]
                 debug_failures.append({
                     "supabase_home": home_name,
                     "supabase_away": away_name,
                     "match_date": date_key,
-                    "sm_candidates_on_date": len(candidates),
-                    "first_5_candidates": candidate_names,
+                    "sm_candidates_on_date": len(day_candidates),
+                    "first_5_candidates": first_candidates,
                 })
 
         return {
             "ok": True,
+            "endpoints_tried": endpoints_tried,
+            "working_endpoint": working_endpoint,
             "sm_fixtures_fetched": len(sm_fixtures),
-            "sm_error": sm_error,
             "sm_dates_with_fixtures": sorted(sm_by_date.keys()),
             "unlinked_in_supabase": len(unlinked),
             "linked_this_run": linked_count,

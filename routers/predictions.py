@@ -47,10 +47,17 @@ async def submit_prediction(
     
     match = match_result.data[0]
     
-    # Verificar que el partido no haya empezado
-    if match["predictions_locked"] or match["status"] in ["live", "finished"]:
+    # Verificar que el partido no haya cerrado (30 min antes del inicio)
+    match_date = match["match_date"]
+    if isinstance(match_date, str):
+        match_date = datetime.fromisoformat(match_date.replace("Z", "+00:00"))
+    if match_date.tzinfo is None:
+        match_date = match_date.replace(tzinfo=timezone.utc)
+    cutoff = match_date - timedelta(minutes=30)
+    now = datetime.now(timezone.utc)
+    if now >= cutoff or match["predictions_locked"] or match["status"] in ["live", "finished"]:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=400,
             detail="Las predicciones para este partido ya están cerradas"
         )
     

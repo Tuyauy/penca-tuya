@@ -144,13 +144,95 @@ async def get_standings():
 # ── /api/admin/link-fixtures ────────────────────────────────────────────────
 @router.get("/admin/link-fixtures")
 async def admin_link_fixtures():
-    """Trigger manual linking of unmatched Supabase matches to Sportmonks fixtures."""
+    """Diagnostic linking: returns full details of what Sportmonks returned and why matches failed."""
     if not SM_API_KEY:
         return {"ok": False, "error": "SPORTMONKS_API_KEY not configured"}
     try:
         sb = get_supabase()
-        _link_unmatched_fixtures(sb)
-        return {"ok": True, "message": "Linking ejecutado — revisar logs para detalles"}
+
+        # 1. Fetch unlinked matches from Supabase
+        unlinked_res = sb.table("matches").select(
+            "id, match_date, "
+            "home_team:teams!matches_home_team_id_fkey(name, code), "
+            "away_team:teams!matches_away_team_id_fkey(name, code)"
+        ).is_("sportmonks_id", "null").execute()
+        unlinked = unlinked_res.data or []
+
+        # 2. Fetch all season fixtures from Sportmonks
+        sm_fixtures = []
+        sm_error = None
+        try:
+            raw_data = _sm_get(
+                f"/fixtures/season/{SM_SEASON_ID}",
+                {"include": "participants;state", "per_page": "500"}
+            )
+            sm_fixtures = raw_data.get("data") or []
+        except Exception as fe:
+            sm_error = str(fe)
+
+        # 3. Group SM fixtures by date
+        sm_by_date: dict = {}
+        for rf in sm_fixtures:
+            starting_at = rf.get("starting_at") or rf.get("date") or ""
+            dk = starting_at[:10]
+            sm_by_date.setdefault(dk, []).append(rf)
+
+        # 4. Try to link each unlinked match, collect diagnostics for first 3 failures
+        linked_count = 0
+        debug_failures = []
+
+        for match in unlinked:
+            raw_md = match.get("match_date") or ""
+            date_key = raw_md[:10]
+            home_name = (match.get("home_team") or {}).get("name", "")
+            away_name = (match.get("away_team") or {}).get("name", "")
+            candidates = sm_by_date.get(date_key, [])
+
+            found = False
+            for rf in candidates:
+                participants = rf.get("participants") or []
+                home_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "home"), None)
+                away_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "away"), None)
+                if not home_sm or not away_sm:
+                    continue
+                home_sm_code = home_sm.get("short_code", "") or home_sm.get("code", "")
+                away_sm_code = away_sm.get("short_code", "") or away_sm.get("code", "")
+                if (
+                    _teams_match(home_name, home_sm.get("name", ""), home_sm_code)
+                    and _teams_match(away_name, away_sm.get("name", ""), away_sm_code)
+                ):
+                    sb.table("matches").update({"sportmonks_id": rf.get("id")}).eq("id", match["id"]).execute()
+                    linked_count += 1
+                    found = True
+                    break
+
+            if not found and len(debug_failures) < 3:
+                candidate_names = [
+                    {
+                        "sm_home": next((p.get("name") for p in (rf.get("participants") or []) if (p.get("meta") or {}).get("location") == "home"), None),
+                        "sm_home_code": next((p.get("short_code") or p.get("code") for p in (rf.get("participants") or []) if (p.get("meta") or {}).get("location") == "home"), None),
+                        "sm_away": next((p.get("name") for p in (rf.get("participants") or []) if (p.get("meta") or {}).get("location") == "away"), None),
+                        "sm_away_code": next((p.get("short_code") or p.get("code") for p in (rf.get("participants") or []) if (p.get("meta") or {}).get("location") == "away"), None),
+                    }
+                    for rf in candidates[:5]
+                ]
+                debug_failures.append({
+                    "supabase_home": home_name,
+                    "supabase_away": away_name,
+                    "match_date": date_key,
+                    "sm_candidates_on_date": len(candidates),
+                    "first_5_candidates": candidate_names,
+                })
+
+        return {
+            "ok": True,
+            "sm_fixtures_fetched": len(sm_fixtures),
+            "sm_error": sm_error,
+            "sm_dates_with_fixtures": sorted(sm_by_date.keys()),
+            "unlinked_in_supabase": len(unlinked),
+            "linked_this_run": linked_count,
+            "debug_first_3_failures": debug_failures,
+        }
     except Exception as e:
         logger.error("admin_link_fixtures error: %s", e)
         return {"ok": False, "error": str(e)}

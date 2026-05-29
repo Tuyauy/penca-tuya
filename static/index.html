@@ -63,9 +63,10 @@
       <section class="countdown-section">
         <div class="container">
           <div class="countdown-card" id="countdownCard">
+            <div class="countdown-card-accent">⚽</div>
             <div class="countdown-label" id="countdownLabel">Próximo partido en</div>
             <div class="countdown-timer" id="countdownTimer">-- · --:--:--</div>
-            <div class="countdown-note" id="countdownNote">Tenés hasta 30 minutos antes del inicio para guardar o editar tu pronóstico.</div>
+            <div class="countdown-note" id="countdownNote">Tenés hasta 30 minutos antes del inicio de cada partido para editar tu pronóstico.</div>
           </div>
         </div>
       </section>
@@ -211,6 +212,13 @@
         </div>
       </div>
       <div class="container">
+        <div class="fixture-countdown-wrap" id="fixtureCountdownWrap">
+          <div class="countdown-card-compact" id="fixtureCountdownCard">
+            <span class="cd-compact-label" id="fixtureCountdownLabel">Próximo en</span>
+            <span class="cd-compact-match" id="fixtureCountdownMatch"></span>
+            <span class="countdown-timer-compact" id="fixtureCountdownTimer">--:--:--</span>
+          </div>
+        </div>
         <div class="fixture-tabs" id="fixtureTabs">
           <button class="tab-btn active" data-phase="group">Grupos</button>
           <button class="tab-btn" data-phase="r16" style="display:none">16avos</button>

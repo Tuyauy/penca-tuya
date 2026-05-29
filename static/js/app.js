@@ -155,14 +155,19 @@ function _startCountdown() {
 }
 
 function _tickCountdown() {
-  const card = document.getElementById('countdownCard');
-  const timerEl = document.getElementById('countdownTimer');
-  const labelEl = document.getElementById('countdownLabel');
-  const noteEl = document.getElementById('countdownNote');
-  if (!timerEl) { clearInterval(_countdownInterval); return; }
+  const timerEl   = document.getElementById('countdownTimer');
+  const labelEl   = document.getElementById('countdownLabel');
+  const noteEl    = document.getElementById('countdownNote');
+  const cardEl    = document.getElementById('countdownCard');
+  const matchEl   = document.getElementById('countdownMatchInfo');
+  // Fixture compact elements
+  const fTimerEl  = document.getElementById('fixtureCountdownTimer');
+  const fLabelEl  = document.getElementById('fixtureCountdownLabel');
+  const fMatchEl  = document.getElementById('fixtureCountdownMatch');
+
+  if (!timerEl && !fTimerEl) { clearInterval(_countdownInterval); return; }
 
   const now = Date.now();
-  // Find next upcoming match (match_date > now and not finished/live)
   const nextMatch = _upcomingMatches.find(m => {
     if (!m.match_date) return false;
     if (m.status === 'finished' || m.status === 'live') return false;
@@ -170,11 +175,11 @@ function _tickCountdown() {
   });
 
   if (!nextMatch) {
-    timerEl.textContent = '--';
-    labelEl.textContent = 'Próximo partido';
-    noteEl.textContent = 'El próximo partido aún no tiene fecha confirmada.';
-    noteEl.classList.remove('urgent');
-    timerEl.classList.remove('urgent');
+    const emptyTimer = '<span class="cd-sep">--</span>';
+    if (timerEl) timerEl.innerHTML = emptyTimer;
+    if (fTimerEl) fTimerEl.innerHTML = emptyTimer;
+    if (labelEl) labelEl.textContent = 'Próximo partido';
+    if (noteEl) noteEl.textContent = 'El próximo partido aún no tiene fecha confirmada.';
     return;
   }
 
@@ -182,38 +187,58 @@ function _tickCountdown() {
   const diff = target - now;
 
   if (diff <= 0) {
-    // This match already started — remove it and re-tick
     _upcomingMatches = _upcomingMatches.filter(m => m !== nextMatch);
     _tickCountdown();
     return;
   }
 
   const totalSecs = Math.floor(diff / 1000);
-  const days = Math.floor(totalSecs / 86400);
+  const days  = Math.floor(totalSecs / 86400);
   const hours = Math.floor((totalSecs % 86400) / 3600).toString().padStart(2, '0');
-  const mins = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
-  const secs = (totalSecs % 60).toString().padStart(2, '0');
+  const mins  = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
+  const secs  = (totalSecs % 60).toString().padStart(2, '0');
+  const sep   = '<span class="cd-sep"> · </span>';
 
-  const isUrgent = diff < 30 * 60 * 1000; // less than 30 min
+  const timeHtml = days > 0
+    ? `${days}d${sep}${hours}:${mins}:${secs}`
+    : `${hours}:${mins}:${secs}`;
 
-  if (days > 0) {
-    timerEl.textContent = `${days} día${days !== 1 ? 's' : ''} · ${hours}:${mins}:${secs}`;
-  } else {
-    timerEl.textContent = `${hours}:${mins}:${secs}`;
-  }
+  // Build match info line for home countdown
+  const homeTeam = nextMatch.home_team || {};
+  const awayTeam = nextMatch.away_team || {};
+  const homeName = homeTeam.name || nextMatch.home_team_placeholder || '?';
+  const awayName = awayTeam.name || nextMatch.away_team_placeholder || '?';
+  const homeFlag = teamFlag(homeTeam.code || '');
+  const awayFlag = teamFlag(awayTeam.code || '');
+  const dateStr  = nextMatch.match_date ? formatMatchDate(nextMatch.match_date) : '';
+  const matchInfoHtml = `${homeFlag} ${escHtml(homeName)} <span style="color:var(--celeste);margin:0 0.3em">VS</span> ${escHtml(awayName)} ${awayFlag}<br><small style="color:#aaa">${dateStr}</small>`;
+
+  const isUrgent = diff < 30 * 60 * 1000;
+
+  // ─ Home countdown ─
+  if (timerEl) timerEl.innerHTML = timeHtml;
+
+  const matchInfoEl = document.getElementById('countdownMatchInfo');
+  if (matchInfoEl) matchInfoEl.innerHTML = matchInfoHtml;
 
   if (isUrgent) {
     const minsLeft = Math.ceil(diff / 60000);
-    labelEl.textContent = '⚠️ ¡Último momento!';
-    noteEl.textContent = `Cerramos pronósticos en ${minsLeft} minuto${minsLeft !== 1 ? 's' : ''}.`;
-    timerEl.classList.add('urgent');
-    noteEl.classList.add('urgent');
+    if (labelEl) labelEl.textContent = '⚠️ ¡Último momento!';
+    if (noteEl) { noteEl.textContent = `Cerramos pronósticos en ${minsLeft} minuto${minsLeft !== 1 ? 's' : ''}.`; noteEl.classList.add('urgent'); }
+    if (timerEl) timerEl.classList.add('urgent');
+    if (cardEl)  cardEl.classList.add('urgent');
   } else {
-    labelEl.textContent = 'Próximo partido en';
-    noteEl.textContent = 'Tenés hasta 30 minutos antes del inicio para guardar o editar tu pronóstico.';
-    timerEl.classList.remove('urgent');
-    noteEl.classList.remove('urgent');
+    if (labelEl) labelEl.textContent = 'Próximo partido en';
+    if (noteEl)  { noteEl.textContent = 'Tenés hasta 30 minutos antes del inicio de cada partido para editar tu pronóstico.'; noteEl.classList.remove('urgent'); }
+    if (timerEl) timerEl.classList.remove('urgent');
+    if (cardEl)  cardEl.classList.remove('urgent');
   }
+
+  // ─ Fixture compact countdown ─
+  if (fTimerEl) fTimerEl.innerHTML = timeHtml;
+  if (fLabelEl) fLabelEl.textContent = isUrgent ? '⚠️ Cierra pronto' : 'Próximo en';
+  if (fMatchEl) fMatchEl.textContent = `${homeFlag} ${homeName} vs ${awayName} ${awayFlag}`;
+  if (fTimerEl) { isUrgent ? fTimerEl.classList.add('urgent') : fTimerEl.classList.remove('urgent'); }
 }
 
 // ===== HOME UPCOMING =====

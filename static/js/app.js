@@ -15,6 +15,8 @@ let selectedKoWinner = null;
 document.addEventListener('DOMContentLoaded', () => {
   loadAuth();
   loadTop3();
+  loadHomeUpcoming();
+  loadHomeCountdown();
 
   // Fixture tab buttons
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -100,6 +102,7 @@ function navigate(page) {
   }
 
   // Load page data
+  if (page === 'home') { loadHomeUpcoming(); loadHomeCountdown(); }
   if (page === 'fixture') loadFixture(currentPhase);
   if (page === 'ranking') loadRanking();
   if (page === 'groups') loadGroups();
@@ -130,6 +133,148 @@ function adjustScore(id, delta) {
   const next = Math.max(0, current + delta);
   el.dataset.value = next;
   el.textContent = next;
+}
+
+// ===== HOME COUNTDOWN =====
+let _countdownInterval = null;
+let _upcomingMatches = [];
+
+async function loadHomeCountdown() {
+  // Load upcoming matches for countdown
+  try {
+    const data = await apiFetch('/api/matches/upcoming?limit=5');
+    _upcomingMatches = Array.isArray(data) ? data : (data.matches || []);
+  } catch {}
+  _startCountdown();
+}
+
+function _startCountdown() {
+  if (_countdownInterval) clearInterval(_countdownInterval);
+  _tickCountdown();
+  _countdownInterval = setInterval(_tickCountdown, 1000);
+}
+
+function _tickCountdown() {
+  const card = document.getElementById('countdownCard');
+  const timerEl = document.getElementById('countdownTimer');
+  const labelEl = document.getElementById('countdownLabel');
+  const noteEl = document.getElementById('countdownNote');
+  if (!timerEl) { clearInterval(_countdownInterval); return; }
+
+  const now = Date.now();
+  // Find next upcoming match (match_date > now and not finished/live)
+  const nextMatch = _upcomingMatches.find(m => {
+    if (!m.match_date) return false;
+    if (m.status === 'finished' || m.status === 'live') return false;
+    return new Date(m.match_date).getTime() > now;
+  });
+
+  if (!nextMatch) {
+    timerEl.textContent = '--';
+    labelEl.textContent = 'Próximo partido';
+    noteEl.textContent = 'El próximo partido aún no tiene fecha confirmada.';
+    noteEl.classList.remove('urgent');
+    timerEl.classList.remove('urgent');
+    return;
+  }
+
+  const target = new Date(nextMatch.match_date).getTime();
+  const diff = target - now;
+
+  if (diff <= 0) {
+    // This match already started — remove it and re-tick
+    _upcomingMatches = _upcomingMatches.filter(m => m !== nextMatch);
+    _tickCountdown();
+    return;
+  }
+
+  const totalSecs = Math.floor(diff / 1000);
+  const days = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600).toString().padStart(2, '0');
+  const mins = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
+  const secs = (totalSecs % 60).toString().padStart(2, '0');
+
+  const isUrgent = diff < 30 * 60 * 1000; // less than 30 min
+
+  if (days > 0) {
+    timerEl.textContent = `${days} día${days !== 1 ? 's' : ''} · ${hours}:${mins}:${secs}`;
+  } else {
+    timerEl.textContent = `${hours}:${mins}:${secs}`;
+  }
+
+  if (isUrgent) {
+    const minsLeft = Math.ceil(diff / 60000);
+    labelEl.textContent = '⚠️ ¡Último momento!';
+    noteEl.textContent = `Cerramos pronósticos en ${minsLeft} minuto${minsLeft !== 1 ? 's' : ''}.`;
+    timerEl.classList.add('urgent');
+    noteEl.classList.add('urgent');
+  } else {
+    labelEl.textContent = 'Próximo partido en';
+    noteEl.textContent = 'Tenés hasta 30 minutos antes del inicio para guardar o editar tu pronóstico.';
+    timerEl.classList.remove('urgent');
+    noteEl.classList.remove('urgent');
+  }
+}
+
+// ===== HOME UPCOMING =====
+async function loadHomeUpcoming() {
+  const container = document.getElementById('homeUpcoming');
+  if (!container) return;
+  try {
+    const token = currentToken ? `Bearer ${currentToken}` : null;
+    const data = await apiFetch('/api/matches/upcoming?limit=3', {}, token);
+    const matches = Array.isArray(data) ? data : (data.matches || []);
+    // Also update _upcomingMatches for countdown if empty
+    if (!_upcomingMatches.length) _upcomingMatches = matches;
+
+    if (!matches.length) {
+      container.innerHTML = '<p class="empty-state">No hay partidos próximos confirmados aún.</p>';
+      return;
+    }
+
+    container.innerHTML = matches.map(m => {
+      const homeTeam = m.home_team || {};
+      const awayTeam = m.away_team || {};
+      const homeName = homeTeam.name || m.home_team_placeholder || '?';
+      const awayName = awayTeam.name || m.away_team_placeholder || '?';
+      const homeFlag = teamFlagHtml(homeTeam);
+      const awayFlag = teamFlagHtml(awayTeam);
+      const dateStr = m.match_date ? formatMatchDate(m.match_date) : 'Fecha a confirmar';
+      const pred = m.user_prediction;
+      const isLocked = m.predictions_locked;
+
+      let btnHtml = '';
+      if (!isLocked) {
+        if (currentUser) {
+          const label = pred ? '✏️ Editar pronóstico' : 'Pronosticar';
+          const cls = pred ? 'home-mc-btn' : 'home-mc-btn';
+          btnHtml = `<button class="${cls}" onclick="openPredModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">${label}</button>`;
+        } else {
+          btnHtml = `<button class="home-mc-btn secondary" onclick="navigate('register')">Registrate para pronosticar</button>`;
+        }
+      }
+
+      return `<div class="home-match-card">
+        <div class="home-mc-teams">
+          <div class="home-mc-team">
+            <span class="home-mc-flag">${homeFlag}</span>
+            <span class="home-mc-name">${escHtml(homeName)}</span>
+          </div>
+          <span class="home-mc-vs">VS</span>
+          <div class="home-mc-team away">
+            <span class="home-mc-flag">${awayFlag}</span>
+            <span class="home-mc-name">${escHtml(awayName)}</span>
+          </div>
+        </div>
+        <div class="home-mc-date">${dateStr}</div>
+        ${btnHtml}
+      </div>`;
+    }).join('');
+
+  } catch {
+    const container2 = document.getElementById('homeUpcoming');
+    if (container2) container2.innerHTML = '<p class="empty-state">Error cargando partidos.</p>';
+  }
 }
 
 // ===== HOME STATS =====

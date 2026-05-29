@@ -425,7 +425,8 @@ async function loadGroups() {
     'PAR': '🇵🇾', 'CUW': '🇨🇼', 'CIV': '🇨🇮', 'SWE': '🇸🇪',
     'TUN': '🇹🇳', 'EGY': '🇪🇬', 'NZL': '🇳🇿', 'CPV': '🇨🇻',
     'NOR': '🇳🇴', 'ALG': '🇩🇿', 'JOR': '🇯🇴', 'COD': '🇨🇩',
-    'GHA': '🇬🇭', 'RSA': '🇿🇦', 'KOR': '🇰🇷', 'CZE': '🇨🇿', 'KSA': '🇸🇦'
+    'GHA': '🇬🇭', 'RSA': '🇿🇦', 'KOR': '🇰🇷', 'CZE': '🇨🇿', 'KSA': '🇸🇦',
+    'IRQ': '🇮🇶', 'UZB': '🇺🇿', 'SCO': '🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'TUR': '🇹🇷', 'IRN': '🇮🇷'
   };
 
   function getFlag(code) {
@@ -433,18 +434,7 @@ async function loadGroups() {
     return teamFlag(code);
   }
 
-  let groups = staticGroups;
-  try {
-    const data = await apiFetch('/api/standings');
-    if (
-        data && Array.isArray(data.groups) && data.groups.length > 0 &&
-        data.groups[0] && data.groups[0].group && Array.isArray(data.groups[0].teams)
-      ) {
-        groups = data.groups;
-    }
-  } catch (e) {
-    // Use static fallback
-  }
+  let groups = staticGroups; // siempre usar fallback estático hasta verificar Sportmonks
 
   function renderGroupTable(groupData) {
     const rows = groupData.teams.map((t) => {

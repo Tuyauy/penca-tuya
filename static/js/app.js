@@ -1468,7 +1468,7 @@ async function loadRivalProfile(username) {
   try {
     const [rivalData, allMatchesData] = await Promise.all([
       apiFetch(`/api/predictions/users/${encodeURIComponent(username)}/predictions`),
-      apiFetch('/api/matches/', {}, token)
+      apiFetch('/api/matches/')
     ]);
     const user = rivalData.user || {};
     const visiblePreds = rivalData.predictions || [];

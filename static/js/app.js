@@ -788,7 +788,7 @@ async function loadRanking() {
 
   try {
     const token = currentToken ? `Bearer ${currentToken}` : null;
-    const data = await apiFetch('/api/ranking/?limit=100', {}, token);
+    const data = await apiFetch('/api/ranking/?limit=500', {}, token);
 
     // User banner
     const banner = document.getElementById('userRankBanner');
@@ -818,12 +818,12 @@ async function loadRanking() {
     const posClass = { 1: 'gold', 2: 'silver', 3: 'bronze' };
 
     const rows = data.ranking.map(u => {
-      const isMe = currentUser && u.id === currentUser.id;
+      const isMe = currentUser && u.username === currentUser.username;
       const pos = u.position;
       const medal = medals[pos] || pos;
       const cls = posClass[pos] || '';
       return `
-        <tr class="${isMe ? 'rank-highlight' : ''}" data-username="${escHtml(u.username)}" style="cursor:pointer" onclick="navigate('rival', this.dataset.username)" title="Ver pronósticos de ${escHtml(u.username)}">
+        <tr class="${isMe ? 'my-row' : ''}" data-username="${escHtml(u.username)}" style="cursor:pointer" onclick="navigate('rival', this.dataset.username)" title="Ver pronósticos de ${escHtml(u.username)}">
           <td><span class="rank-pos ${cls}">${medal}</span></td>
           <td>
             <div class="rank-username">${escHtml(u.username)}${isMe ? ' <small style="color:var(--gold)">← vos</small>' : ''}</div>

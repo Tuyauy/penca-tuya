@@ -220,3 +220,45 @@ async def admin_stats(admin: dict = Depends(require_admin)):
         "matches_pending": pending.count or 0,
         "total_purchases_registered": purchases.count or 0
     }
+
+
+# GET /admin/set-result?match_id=X&home=Y&away=Z
+@router.get("/set-result")
+async def admin_set_result_get(
+    match_id: int,
+    home: int,
+    away: int,
+    admin: dict = Depends(require_admin),
+):
+    """Carga resultado manualmente desde el browser (sin POST body)."""
+    sb = get_supabase()
+    sb.table("matches").update({
+        "home_score": home,
+        "away_score": away,
+        "status": "finished",
+        "predictions_locked": True,
+    }).eq("id", match_id).execute()
+    try:
+        sb.rpc("calculate_match_points", {"match_id_param": match_id}).execute()
+        points_ok = True
+    except Exception as e:
+        points_ok = str(e)
+    return {"ok": True, "match_id": match_id, "resultado": f"{home}-{away}", "puntos": points_ok}
+
+
+# GET /admin/pending-matches
+@router.get("/pending-matches")
+async def admin_pending_matches(admin: dict = Depends(require_admin)):
+    """Partidos sin resultado cuya fecha ya paso."""
+    from datetime import datetime, timezone
+    sb = get_supabase()
+    now_iso = datetime.now(timezone.utc).isoformat()
+    res = (
+        sb.table("matches")
+        .select("id, match_number, phase, group_name, home_team_id, away_team_id, match_date, status, home_score, away_score, sportmonks_id")
+        .neq("status", "finished")
+        .lt("match_date", now_iso)
+        .order("match_date")
+        .execute()
+    )
+    return {"pending": res.data, "count": len(res.data)}

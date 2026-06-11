@@ -963,6 +963,11 @@ main {
 }
 
 .rank-highlight td { background: rgba(77, 184, 216, 0.08); }
+.my-row { background: #29272d !important; }
+.my-row td { background: #29272d !important; color: #ffffff !important; }
+.my-row td * { color: #ffffff !important; }
+.my-row td .rank-points { color: #ffffff !important; }
+.my-row td small { color: rgba(255,255,255,0.7) !important; }
 
 /* ===== AUTH ===== */
 .auth-container {

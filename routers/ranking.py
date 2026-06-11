@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.get("/")
 async def get_ranking(
-    limit: int = 50,
+    limit: int = 500,
     offset: int = 0,
     current_user: Optional[dict] = Depends(get_current_user_optional)
 ):

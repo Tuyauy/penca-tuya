@@ -1472,7 +1472,7 @@ async function loadRivalProfile(username) {
     ]);
     const user = rivalData.user || {};
     const visiblePreds = rivalData.predictions || [];
-    const allMatches = allMatchesData.matches || allMatchesData || [];
+    const allMatches = (allMatchesData.phases || []).flatMap(function(p) { return p.matches || []; });
     headerEl.innerHTML = `<div class="rival-user-info"><h1 class="page-title">${escHtml(user.username || username)}</h1><div class="rival-pts-badge">${user.total_points ?? 0} puntos</div></div>`;
     const predByMatchId = {};
     for (const p of visiblePreds) {

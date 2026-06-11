@@ -1482,16 +1482,16 @@ async function loadRivalProfile(username) {
     }
     const now = new Date();
     const cutoff = new Date(now.getTime() + 30 * 60 * 1000);
-    const played = [], revealing = [], locked = [];
+    const played = [], revealing = [];
     for (const m of allMatches) {
       const matchDate = new Date(m.match_date);
       const pred = predByMatchId[m.id];
       if (m.status === 'finished') { played.push({ match: m, pred }); }
       else if (matchDate <= cutoff) { revealing.push({ match: m, pred }); }
-      else { locked.push({ match: m }); }
+        // locked matches not shown
     }
     const byDate = (a, b) => new Date(a.match.match_date) - new Date(b.match.match_date);
-    played.sort(byDate); revealing.sort(byDate); locked.sort(byDate);
+    played.sort(byDate); revealing.sort(byDate);
     function flagImg(team) {
       if (!team || !team.flag_url) return '';
       return `<img src="${escHtml(team.flag_url)}" alt="${escHtml(team.name || '')}" class="rival-flag">`;
@@ -1525,7 +1525,7 @@ async function loadRivalProfile(username) {
     let html = '';
     if (played.length) { html += '<div class="rpc-section-title">Partidos jugados</div>' + played.map(x => renderCard(x.match, x.pred, 'played')).join(''); }
     if (revealing.length) { html += '<div class="rpc-section-title">Proximos a revelar</div>' + revealing.map(x => renderCard(x.match, x.pred, 'revealing')).join(''); }
-    if (locked.length) { html += '<div class="rpc-section-title">Por jugar</div>' + locked.map(x => renderCard(x.match, null, 'locked')).join(''); }
+    // locked section removed
     if (!html) html = '<p class="empty-state">No hay partidos disponibles.</p>';
     listEl.innerHTML = html;
   } catch(e) {

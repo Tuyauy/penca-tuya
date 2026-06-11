@@ -35,13 +35,31 @@ def _cached(key: str, fetch_fn):
     return data
 
 def _sm_get(path: str, params: dict = None) -> dict:
-    """GET request to Sportmonks with API key header."""
+    """GET request to Sportmonks. Retries 3x with backoff on 503/timeout."""
     headers = {"Authorization": SM_API_KEY}
     url = f"{SM_BASE}{path}"
     p = {"include": "", **(params or {})}
-    resp = httpx.get(url, headers=headers, params=p, timeout=10)
-    resp.raise_for_status()
-    return resp.json()
+    delays = [5, 10, 20]
+    last_exc = None
+    for attempt, delay in enumerate(delays, 1):
+        try:
+            resp = httpx.get(url, headers=headers, params=p, timeout=30)
+            resp.raise_for_status()
+            return resp.json()
+        except (httpx.TimeoutException, httpx.HTTPStatusError) as e:
+            is_retryable = isinstance(e, httpx.TimeoutException) or (
+                isinstance(e, httpx.HTTPStatusError) and e.response.status_code in (503, 502, 429)
+            )
+            if is_retryable and attempt <= len(delays):
+                logger.warning(
+                    "Sportmonks _sm_get intento %d fallido (%s), reintentando en %ds...",
+                    attempt, e, delay
+                )
+                time.sleep(delay)
+                last_exc = e
+            else:
+                raise
+    raise last_exc
 
 # ── Helper: map Sportmonks state to our status ────────────────────────────────
 _LIVE_STATES   = {"LIVE", "HT", "ET", "PEN_LIVE", "AET", "BREAK"}

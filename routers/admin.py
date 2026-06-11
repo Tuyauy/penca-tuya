@@ -228,8 +228,10 @@ async def admin_set_result_get(
     match_id: int,
     home: int,
     away: int,
-    admin: dict = Depends(require_admin),
+    admin_key: str = "",
 ):
+    if admin_key != "tuya2026":
+        raise HTTPException(status_code=403, detail="Clave incorrecta")
     """Carga resultado manualmente desde el browser (sin POST body)."""
     sb = get_supabase()
     sb.table("matches").update({
@@ -248,7 +250,9 @@ async def admin_set_result_get(
 
 # GET /admin/pending-matches
 @router.get("/pending-matches")
-async def admin_pending_matches(admin: dict = Depends(require_admin)):
+async def admin_pending_matches(admin_key: str = ""):
+    if admin_key != "tuya2026":
+        raise HTTPException(status_code=403, detail="Clave incorrecta")
     """Partidos sin resultado cuya fecha ya paso."""
     from datetime import datetime, timezone
     sb = get_supabase()

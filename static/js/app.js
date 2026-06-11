@@ -1468,62 +1468,146 @@ async function loadRivalProfile(username) {
   listEl.innerHTML = '';
 
   try {
-    const data = await apiFetch(`/api/predictions/users/${encodeURIComponent(username)}/predictions`);
-    const user = data.user || {};
-    const preds = data.predictions || [];
+    // Fetch visible predictions + all matches in parallel
+    const [rivalData, allMatchesData] = await Promise.all([
+      apiFetch(`/api/predictions/users/${encodeURIComponent(username)}/predictions`),
+      apiFetch('/api/matches/', {}, token)
+    ]);
+
+    const user = rivalData.user || {};
+    const visiblePreds = rivalData.predictions || [];
+    const allMatches = allMatchesData.matches || allMatchesData || [];
 
     headerEl.innerHTML = `
       <div class="rival-user-info">
         <h1 class="page-title">${escHtml(user.username || username)}</h1>
         <div class="rival-pts-badge">${user.total_points ?? 0} puntos</div>
-      </div>
-    `;
+      </div>`;
 
-    if (preds.length === 0) {
-      listEl.innerHTML = '<p class="empty-state">Todavía no hay partidos jugados para mostrar los pronósticos de este jugador.</p>';
-      return;
+    // Build lookup of match_id -> prediction for visible ones
+    const predByMatchId = {};
+    for (const p of visiblePreds) {
+      const m = p.match || p;
+      const mid = m.id || p.match_id;
+      if (mid) predByMatchId[mid] = p;
     }
 
-    listEl.innerHTML = preds.map(p => {
-      const m = p.match || {};
-      const ht = m.home_team || {};
-      const at = m.away_team || {};
-      const homeName = ht.name || m.home_team_placeholder || '?';
-      const awayName = at.name || m.away_team_placeholder || '?';
-      const homeFlag = ht.flag_url ? `<img src="${escHtml(ht.flag_url)}" class="rival-flag" alt="">` : '';
-      const awayFlag = at.flag_url ? `<img src="${escHtml(at.flag_url)}" class="rival-flag" alt="">` : '';
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + 30 * 60 * 1000); // now + 30min
 
-      const predStr = `${p.predicted_home_score ?? '?'} - ${p.predicted_away_score ?? '?'}`;
-      const finished = m.status === 'finished';
-      const resultStr = finished ? `${m.home_score} - ${m.away_score}` : null;
+    // Classify each match
+    const played = [];
+    const revealing = [];
+    const locked = [];
 
-      const pts = p.points_earned;
-      let ptsBadge = '';
-      if (pts != null) {
-        const col = pts===10?'var(--gold)':pts===7?'var(--green)':pts===5?'var(--blue)':pts===3?'var(--orange)':'var(--red)';
-        const label = pts===10?'⚽ Exacto':pts===7?'✅ Empate OK':pts===5?'↔️ Dif. exacta':pts===3?'👍 Ganador':'❌ Errado';
-        ptsBadge = `<div class="rival-pts" style="color:${col}">${pts} pts <small>${label}</small></div>`;
+    for (const m of allMatches) {
+      const matchDate = new Date(m.match_date);
+      const pred = predByMatchId[m.id];
+      if (m.status === 'finished') {
+        played.push({ match: m, pred });
+      } else if (matchDate <= cutoff) {
+        revealing.push({ match: m, pred });
+      } else {
+        locked.push({ match: m });
+      }
+    }
+
+    // Sort by match_date
+    const byDate = (a, b) => new Date(a.match.match_date) - new Date(b.match.match_date);
+    played.sort(byDate);
+    revealing.sort(byDate);
+    locked.sort(byDate);
+
+    function flagImg(team) {
+      if (!team) return '';
+      const url = team.flag_url || '';
+      const name = escHtml(team.name || '');
+      return url ? `<img src="${escHtml(url)}" alt="${name}" class="rival-flag">` : '';
+    }
+
+    function teamName(team) {
+      return team ? escHtml(team.name || team.home_team_placeholder || '?') : '?';
+    }
+
+    function resultTypeBadge(rt) {
+      if (!rt) return '';
+      const cls = rt === 'exact' ? 'rtype-exact' : rt === 'winner' ? 'rtype-winner' : rt === 'difference' ? 'rtype-diff' : 'rtype-wrong';      const map = { exact: 🎯 Exacto, winner Ganador', difference: ': 
+      return `<span class="rtype-badge ${cls}">${map[rt] || rt}</span>`;
+    }
+
+    function renderCard(m, pred, state) {
+      const home = m.home_team || {};
+      const away = m.away_team || {};
+      const homeName = teamName(home) || escHtml(m.home_team_placeholder || '?');
+      const awayName = teamName(away) || escHtml(m.away_team_placeholder || '?');
+      const homeFlag = flagImg(home);
+      const awayFlag = flagImg(away);
+      const dateStr = m.match_date ? formatMatchDate(m.match_date) : '';
+      const phaseLbl = escHtml(m.phase || m.group_name || '');
+
+      if (state === 'locked') {
+        return `
+          <div class="rival-pred-card rpc-locked">
+            <div class="rpc-meta">${dateStr}${phaseLbl ? ` · ${phaseLbl}` : ''}</div>
+            <div class="rpc-teams">
+              <div class="rpc-team">${homeFlag}<span>${homeName}</span></div>
+              <div class="rpc-vs">vs</div>
+              <div class="rpc-team">${awayFlag}<span>${awayName}</span></div>
+            </div>
+          </div>`;            <div class="rpc-locked-msg">
       }
 
+      // Visible (played or revealing)
+      const realScore = (m.status === 'finished' && m.home_score != null)
+        ? `${m.home_score} - ${m.away_score}`
+        : (state === 'revealing' ? 'En juego' : '');
+      const predScore = pred ? `${pred.home_score ?? '?'} ${pred.away_score -'; ?? '?'}` : '
+      const pts = pred ? (pred.points_earned ?? 0) : 0;
+      const rt = pred ? pred.result_type : null;
+      const cardCls = m.status === 'finished'
+        ? (rt === 'exact' ? 'rpc-exact' : (rt && rt !== 'wrong') ? 'rpc-hit' : rt === 'wrong' ? 'rpc-miss' : 'rpc-finished')
+        : 'rpc-revealing';
+
       return `
-        <div class="rival-pred-card">
-          <div class="rival-match-date">${m.match_date ? formatMatchDate(m.match_date) : ''}</div>
-          <div class="rival-teams">
-            <div class="rival-team home">${homeFlag}<span>${escHtml(homeName)}</span></div>
-            <div class="rival-scores">
-              <div class="rival-pred-score">${predStr}</div>
-              ${resultStr ? `<div class="rival-real-score">${resultStr}</div>` : '<div class="rival-real-score pending">En juego</div>'}
-              <div class="rival-score-labels">
-                <span>pronóstico</span>
-                <span>resultado</span>
+        <div class="rival-pred-card ${cardCls}">
+          <div class="rpc-meta">${dateStr}${phaseLbl ? ` · ${phaseLbl}` : ''}</div>
+          <div class="rpc-teams">
+            <div class="rpc-team">${homeFlag}<span>${homeName}</span></div>
+            <div class="rpc-center">
+              <div class="rpc-scores">
+                ${realScore ? `<div class="rpc-real">${realScore}</div>` '<div class="rpc-real pending"> :</div>'}
+                <div class="rpc-labels"><span>resultado</span></div>
+                <div class="rpc-pred">${predScore}</div>
+                <div class="rpc-labels"><span>pronóstico</span></div>
               </div>
+              ${m.status === 'finished' && pred ? `<div class="rpc-pts">${pts > 0 ? '+' : ''}${pts} pts ${resultTypeBadge(rt)}</div>` : ''}
             </div>
-            <div class="rival-team away">${awayFlag}<span>${escHtml(awayName)}</span></div>
+            <div class="rpc-team">${awayFlag}<span>${awayName}</span></div>
           </div>
-          ${ptsBadge}
-        </div>
-      `;
-    }).join('');
+        </div>`;
+    }
+
+    let html = '';
+
+    if (played.length > 0) {
+      html += '<div class="rpc-section- Partidos jugados</div>';title">
+      html += played.map(({ match, pred }) => renderCard(match, pred, 'played')).join('');
+    }
+
+    if (revealing.length > 0) {
+      html += '<div class="rpc-section-title">🔓 Prxxximos a revelar</div>';
+      html += revealing.map(({ match, pred }) => renderCard(match, pred, 'revealing')).join('');
+    }
+
+    if (locked.length > 0) {
+      html += locked.map(({ match }) => renderCard(match, null, 'locked')).join('');      html += '<div class="rpc-section-title">
+    }
+
+    if (!html) {
+      html = '<p class="empty-state">No hay partidos disponibles.</p>';
+    }
+
+    listEl.innerHTML = html;
 
   } catch(e) {
     headerEl.innerHTML = '<p class="empty-state">Error cargando el perfil.</p>';

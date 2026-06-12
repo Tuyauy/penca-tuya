@@ -218,19 +218,21 @@ async def get_rival_predictions(username: str):
     if not preds_res.data:
         return {"user": user_data, "predictions": []}
 
-    # Filtrar solo partidos cuya fecha ya pasó el corte de 30 min
-    visible = []
-    for p in preds_res.data:
-        m = p.get("match")
-        if not m:
-            continue
-        match_date_str = m.get("match_date", "")
-        try:
-            match_dt = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
-            if match_dt <= datetime.fromisoformat(cutoff):
-                visible.append(p)
-        except Exception:
-            pass
+        # Filtrar partidos ya no editables: status='finished' O match_date <= cutoff (30 min pasados)
+        cutoff_dt = datetime.fromisoformat(cutoff)
+        visible = []
+        for p in preds_res.data:
+            m = p.get("match")
+            if not m:
+                continue
+            match_status = m.get("status", "")
+            match_date_str = m.get("match_date", "")
+            try:
+                match_dt = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
+                if match_status == "finished" or match_dt <= cutoff_dt:
+                    visible.append(p)
+            except Exception:
+                pass
 
     # Ordenar por fecha del partido ascendente
     visible.sort(key=lambda p: p["match"]["match_date"])

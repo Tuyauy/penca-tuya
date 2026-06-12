@@ -234,7 +234,7 @@ async def get_rival_predictions(username: str):
             except Exception:
                 pass
 
-    # Ordenar por fecha del partido ascendente
-    visible.sort(key=lambda p: p["match"]["match_date"])
+        # Ordenar por fecha del partido ascendente
+        visible.sort(key=lambda p: p["match"]["match_date"])
 
-    return {"user": user_data, "predictions": visible}
+        return {"user": user_data, "predictions": visible}

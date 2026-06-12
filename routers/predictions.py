@@ -124,7 +124,7 @@ async def get_my_predictions(current_user: dict = Depends(get_current_user)):
     
     result = sb.table("predictions").select("""
         *,
-        matches(
+        matches!match_id(
             *,
             home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
             away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url)
@@ -187,7 +187,7 @@ async def get_my_stats(current_user: dict = Depends(get_current_user)):
 
 @router.get("/users/{username}/predictions")
 async def get_rival_predictions(username: str):
-    """Predicciones públicas de un usuario (solo partidos ya no editables)"""
+    """Predicciones publicas de un usuario (solo partidos ya no editables)"""
     sb = get_supabase()
 
     # Buscar el usuario por username
@@ -200,41 +200,40 @@ async def get_rival_predictions(username: str):
     # Calcular el corte: now - 30 minutos en UTC
     cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
 
-    # Traer predicciones con info del partido
-    preds_res = sb.table("predictions").select("""
-        predicted_home_score,
-        predicted_away_score,
-        predicted_extra_time,
-        predicted_penalties,
-        points_earned,
-        matches(
-            id, match_date, phase, status,
-            home_score, away_score,
-            home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
-            away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url)
-        )
-    """).eq("user_id", user_data["id"]).execute()
+    # Traer predicciones del usuario (sin join embebido)
+    preds_res = sb.table("predictions").select(
+        "match_id, predicted_home_score, predicted_away_score, predicted_extra_time, predicted_penalties, points_earned"
+    ).eq("user_id", user_data["id"]).execute()
 
     if not preds_res.data:
         return {"user": user_data, "predictions": []}
 
-        # Filtrar partidos ya no editables: status='finished' O match_date <= cutoff (30 min pasados)
-        cutoff_dt = datetime.fromisoformat(cutoff)
-        visible = []
-        for p in preds_res.data:
-            m = p.get("matches")
-            if not m:
-                continue
-            match_status = m.get("status", "")
-            match_date_str = m.get("match_date", "")
-            try:
-                match_dt = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
-                if match_status == "finished" or match_dt <= cutoff_dt:
-                    visible.append(p)
-            except Exception:
-                pass
+    # Obtener matches por separado
+    match_ids = [p["match_id"] for p in preds_res.data if p.get("match_id")]
+    matches_res = sb.table("matches").select(
+        "id, match_date, phase, status, home_score, away_score, home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url), away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url)"
+    ).in_("id", match_ids).execute()
+    matches_by_id = {m["id"]: m for m in (matches_res.data or [])}
 
-        # Ordenar por fecha del partido ascendente
-        visible.sort(key=lambda p: p["matches"]["match_date"])
+    # Filtrar partidos ya no editables: status='finished' O match_date <= cutoff
+    cutoff_dt = datetime.fromisoformat(cutoff)
+    visible = []
+    for p in preds_res.data:
+        mid = p.get("match_id")
+        m = matches_by_id.get(mid)
+        if not m:
+            continue
+        match_status = m.get("status", "")
+        match_date_str = m.get("match_date", "")
+        try:
+            match_dt = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
+            if match_status == "finished" or match_dt <= cutoff_dt:
+                p["matches"] = m
+                visible.append(p)
+        except Exception:
+            pass
 
-        return {"user": user_data, "predictions": visible}
+    # Ordenar por fecha del partido ascendente
+    visible.sort(key=lambda p: p["matches"]["match_date"])
+
+    return {"user": user_data, "predictions": visible}

@@ -17,23 +17,30 @@ async def get_ranking(
 ):
     """Obtener el ranking general"""
     sb = get_supabase()
-    
-    result = sb.table("ranking").select("*").range(offset, offset + limit - 1).execute()
-    ranking = result.data or []
-    
-    # Contar total
-    total_result = sb.table("penca_users").select("id", count="exact").execute()
-    total = total_result.count or len(ranking)
-    
-    # Si hay usuario logueado, buscar su posición
+
+    # Traer todos los usuarios para asignar posicion consecutiva correcta
+    all_result = sb.table("ranking").select("*").execute()
+    all_users = all_result.data or []
+
+    # Ordenar por total_points DESC, luego username ASC como desempate
+    all_users.sort(key=lambda u: (-u.get("total_points", 0), u.get("username", "").lower()))
+
+    # Asignar posicion consecutiva unica (row_number)
+    for i, user in enumerate(all_users):
+        user["position"] = i + 1
+
+    # Paginar
+    ranking = all_users[offset: offset + limit]
+    total = len(all_users)
+
+    # Si hay usuario logueado, buscar su posicion
     user_position = None
     if current_user:
-        user_rank = sb.table("ranking").select("*").eq(
-            "id", current_user["sub"]
-        ).execute()
-        if user_rank.data:
-            user_position = user_rank.data[0]
-    
+        for user in all_users:
+            if user.get("id") == current_user["sub"]:
+                user_position = user
+                break
+
     return {
         "ranking": ranking,
         "total": total,
@@ -45,21 +52,32 @@ async def get_ranking(
 async def get_top3():
     """Obtener el top 3 para mostrar en la landing"""
     sb = get_supabase()
-    result = sb.table("ranking").select("*").limit(3).execute()
-    return result.data or []
+
+    # Traer todos y calcular posicion correcta
+    all_result = sb.table("ranking").select("*").execute()
+    all_users = all_result.data or []
+
+    # Ordenar por total_points DESC, luego username ASC
+    all_users.sort(key=lambda u: (-u.get("total_points", 0), u.get("username", "").lower()))
+
+    # Asignar posicion consecutiva
+    for i, user in enumerate(all_users):
+        user["position"] = i + 1
+
+    return all_users[:3]
 
 
 @router.get("/stats")
 async def get_global_stats():
-    """Estadísticas globales de la penca"""
+    """Estadisticas globales de la penca"""
     sb = get_supabase()
-    
+
     users_count = sb.table("penca_users").select("id", count="exact").execute()
     preds_count = sb.table("predictions").select("id", count="exact").execute()
     finished_matches = sb.table("matches").select("id", count="exact").eq(
         "status", "finished"
     ).execute()
-    
+
     return {
         "total_participants": users_count.count or 0,
         "total_predictions": preds_count.count or 0,

@@ -352,22 +352,22 @@ async function loadGroups() {
   const staticGroups = [
     { group: 'A', teams: [ { name: 'México', code: 'MEX', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Sudáfrica', code: 'ZAF', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Rep. de Corea', code: 'KOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Chequia', code: 'CZE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'B', teams: [ { name: 'Canadá', code: 'CAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Bosnia y Herzegovina', code: 'BIH', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Catar', code: 'QAT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Suiza', code: 'SUI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'C', teams: [ { name: 'Brasil', code: 'BRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Marruecos', code: 'MAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Haití', code: 'HTI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Escocia', code: 'SCO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'D', teams: [ { name: 'EE. UU.', code: 'USA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Paraguay', code: 'PRY', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Australia', code: 'AUS', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Turquía', code: 'TUR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'C', teams: [ { name: 'Brasil', code: 'BRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Marruecos', code: 'MAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Haití', code: 'ht', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Escocia', code: 'SCO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'D', teams: [ { name: 'EE. UU.', code: 'USA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Paraguay', code: 'py', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Australia', code: 'AUS', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Turquía', code: 'TUR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'E', teams: [ { name: 'Alemania', code: 'GER', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Curazao', code: 'CUW', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Costa de Marfil', code: 'CIV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Ecuador', code: 'ECU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'F', teams: [ { name: 'Países Bajos', code: 'NED', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Japón', code: 'JPN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Suecia', code: 'SWE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Túnez', code: 'TUN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'G', teams: [ { name: 'Bélgica', code: 'BEL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Egipto', code: 'EGY', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'RI de Irán', code: 'IRN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Nueva Zelanda', code: 'NZL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'H', teams: [ { name: 'España', code: 'ESP', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Is. Cabo Verde', code: 'CPV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Arabia Saudí', code: 'KSA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Uruguay', code: 'URU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'I', teams: [ { name: 'Francia', code: 'FRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Senegal', code: 'SEN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Irak', code: 'IRQ', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Noruega', code: 'NOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'J', teams: [ { name: 'Argentina', code: 'ARG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Argelia', code: 'DZA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Austria', code: 'AUT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Jordania', code: 'JOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'J', teams: [ { name: 'Argentina', code: 'ARG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Argelia', code: 'dz', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Austria', code: 'AUT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Jordania', code: 'JOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'K', teams: [ { name: 'Portugal', code: 'POR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'RD Congo', code: 'COD', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Uzbekistán', code: 'UZB', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Colombia', code: 'COL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'L', teams: [ { name: 'Inglaterra', code: 'ENG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Croacia', code: 'CRO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Ghana', code: 'GHA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Panamá', code: 'PAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]}
   ];
 
   // Extra flags for teams not in the main teamFlag() map
   const extraFlags = {
-    'BIH':'🇧🇦','QAT':'🇶🇦','SUI':'🇨🇭','HTI':'🇭🇹','PRY':'🇵🇾','CUW':'🇨🇼','CIV':'🇨🇮',
-    'SWE':'🇸🇪','TUN':'🇹🇳','EGY':'🇪🇬','NZL':'🇳🇿','CPV':'🇨🇻','NOR':'🇳🇴','DZA':'🇩🇿',
+    'BIH':'🇧🇦','QAT':'🇶🇦','SUI':'🇨🇭','ht':'🇭🇹','py':'🇵🇾','CUW':'🇨🇼','CIV':'🇨🇮',
+    'SWE':'🇸🇪','TUN':'🇹🇳','EGY':'🇪🇬','NZL':'🇳🇿','CPV':'🇨🇻','NOR':'🇳🇴','dz':'🇩🇿',
     'JOR':'🇯🇴','COD':'🇨🇩','GHA':'🇬🇭','ZAF':'🇿🇦','KOR':'🇰🇷','CZE':'🇨🇿','KSA':'🇸🇦',
     'IRQ':'🇮🇶','UZB':'🇺🇿','SCO':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','TUR':'🇹🇷','IRN':'🇮🇷','MAR':'🇲🇦',
   };

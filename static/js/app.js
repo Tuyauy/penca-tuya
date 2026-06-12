@@ -376,7 +376,6 @@ async function loadGroups() {
   function renderGroupTable(groupData) {
     const rows = groupData.teams.map(t => {
       const gd = (t.gf || 0) - (t.ga || 0);
-      console.log('GROUP TEAM CODE:', t.code, '\u2192', getFlag(t.code));
       return `<tr>
         <td class="standings-flag">${getFlag(t.code)}</td>
         <td class="standings-team">${escHtml(t.name)}</td>

@@ -715,7 +715,7 @@ def sync_live_and_finished():
         sb = get_supabase()
 
 
- Orphan rescue: partidos no-finished con sportmonks_id y now-2h < match_date ─        # ─
+        # Orphan rescue: partidos no-finished con sportmonks_id y match_date < now-2h
         try:
             from datetime import datetime, timezone, timedelta
             _orp_cutoff = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()

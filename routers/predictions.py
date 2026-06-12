@@ -124,7 +124,7 @@ async def get_my_predictions(current_user: dict = Depends(get_current_user)):
     
     result = sb.table("predictions").select("""
         *,
-        match:matches(
+        matches(
             *,
             home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
             away_team:teams!matches_away_team_id_fkey(id, name, code, flag_url)
@@ -207,7 +207,7 @@ async def get_rival_predictions(username: str):
         predicted_extra_time,
         predicted_penalties,
         points_earned,
-        match:matches(
+        matches(
             id, match_date, phase, status,
             home_score, away_score,
             home_team:teams!matches_home_team_id_fkey(id, name, code, flag_url),
@@ -222,7 +222,7 @@ async def get_rival_predictions(username: str):
         cutoff_dt = datetime.fromisoformat(cutoff)
         visible = []
         for p in preds_res.data:
-            m = p.get("match")
+            m = p.get("matches")
             if not m:
                 continue
             match_status = m.get("status", "")
@@ -235,6 +235,6 @@ async def get_rival_predictions(username: str):
                 pass
 
         # Ordenar por fecha del partido ascendente
-        visible.sort(key=lambda p: p["match"]["match_date"])
+        visible.sort(key=lambda p: p["matches"]["match_date"])
 
         return {"user": user_data, "predictions": visible}

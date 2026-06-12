@@ -39,6 +39,17 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== AUTH =====
 function loadAuth() {
   currentToken = localStorage.getItem('penca_token');
+  // Verificar si el token está vencido
+  if (currentToken) {
+    try {
+      const payload = JSON.parse(atob(currentToken.split('.')[1]));
+      if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        localStorage.removeItem('penca_token');
+        localStorage.removeItem('penca_user');
+        currentToken = null;
+      }
+    } catch(e) { currentToken = null; }
+  }
   const userData = localStorage.getItem('penca_user');
   if (currentToken && userData) {
     try {

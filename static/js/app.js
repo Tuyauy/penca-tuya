@@ -1512,16 +1512,19 @@ async function loadRivalProfile(username) {
       if (state === 'locked') {
         return `<div class="rival-pred-card rpc-locked"><div class="rpc-meta">${meta}</div><div class="rpc-teams"><div class="rpc-team">${flagImg(m.home_team)}<span>${hn}</span></div><div class="rpc-vs">vs</div><div class="rpc-team rpc-team-away">${flagImg(m.away_team)}<span>${an}</span></div></div><div class="rpc-locked-msg">Pronostico se revela 30 min antes del partido</div></div>`;
       }
-      const realScore = (m.status === 'finished' && m.home_score != null) ? (m.home_score + ' - ' + m.away_score) : (state === 'revealing' ? 'En juego' : '');
-      const predScore = pred ? ((pred.home_score != null ? pred.home_score : '?') + ' - ' + (pred.away_score != null ? pred.away_score : '?')) : '--';
-      const pts = pred ? (pred.points_earned || 0) : 0;
-      const rt = pred ? pred.result_type : null;
-      const cardCls = m.status === 'finished'
-        ? (rt === 'exact' ? 'rpc-exact' : (rt && rt !== 'wrong') ? 'rpc-hit' : rt === 'wrong' ? 'rpc-miss' : 'rpc-finished')
-        : 'rpc-revealing';
-      const ptsHtml = (m.status === 'finished' && pred) ? `<div class="rpc-pts">${pts > 0 ? '<b>+' + pts + ' pts</b>' : pts + ' pts'} ${rtBadge(rt)}</div>` : '';
-      return `<div class="rival-pred-card ${cardCls}"><div class="rpc-meta">${meta}</div><div class="rpc-teams"><div class="rpc-team">${flagImg(m.home_team)}<span>${hn}</span></div><div class="rpc-center"><div class="rpc-real">${realScore || '--'}</div><div class="rpc-labels"><span>resultado</span></div><div class="rpc-pred">${predScore}</div><div class="rpc-labels"><span>pronostico</span></div>${ptsHtml}</div><div class="rpc-team rpc-team-away">${flagImg(m.away_team)}<span>${an}</span></div></div></div>`;
-    }
+        const realScore = (m.status === 'finished' && m.home_score != null) ? (m.home_score + ' - ' + m.away_score) : (state === 'revealing' ? 'En juego' : '');
+        const predH = pred ? (pred.predicted_home_score != null ? pred.predicted_home_score : 0) : 0;
+        const predA = pred ? (pred.predicted_away_score != null ? pred.predicted_away_score : 0) : 0;
+        const predScore = pred ? (predH + ' - ' + predA) : '--';
+        const pts = pred ? (pred.points_earned || 0) : 0;
+        const rt = pred ? pred.result_type : null;
+        const cardCls = m.status === 'finished'
+          ? (rt === 'exact' ? 'rpc-exact' : (rt && rt !== 'wrong') ? 'rpc-hit' : rt === 'wrong' ? 'rpc-miss' : 'rpc-finished')
+          : 'rpc-revealing';
+        const ptsColor = pts >= 7 ? 'var(--green)' : pts >= 3 ? 'var(--orange)' : 'var(--red)';
+        const ptsHtml = (m.status === 'finished' && pred) ? `<div class="rpc-pts"><span style="color:${ptsColor};font-weight:700">${pts} pts</span>${rtBadge(rt)}</div>` : '';
+        return `<div class="rival-pred-card ${cardCls}"><div class="rpc-meta">${meta}</div><div class="rpc-teams"><div class="rpc-team">${flagImg(m.home_team)}<span>${hn}</span></div><div class="rpc-center"><div class="rpc-row"><span class="rpc-score">${realScore || '--'}</span><span class="rpc-label">resultado</span></div><div class="rpc-row"><span class="rpc-score">${predScore}</span><span class="rpc-label">pronóstico</span></div>${ptsHtml}</div><div class="rpc-team rpc-team-away">${flagImg(m.away_team)}<span>${an}</span></div></div></div>`;
+      }
     let html = '';
     if (played.length) { html += '<div class="rpc-section-title">Partidos jugados</div>' + played.map(x => renderCard(x.match, x.pred, 'played')).join(''); }
     if (revealing.length) { html += '<div class="rpc-section-title">Proximos a revelar</div>' + revealing.map(x => renderCard(x.match, x.pred, 'revealing')).join(''); }

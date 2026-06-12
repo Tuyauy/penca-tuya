@@ -2568,6 +2568,35 @@ main {
   padding: 0.15rem 0.5rem;
 }
 
+.rpc-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  flex: 1;
+}
+
+.rpc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: center;
+}
+
+.rpc-score {
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-width: 3rem;
+  text-align: center;
+}
+
+.rpc-label {
+  font-size: 0.7rem;
+  color: var(--gray);
+  min-width: 4rem;
+}
+
+
 .rtype-badge {
   font-size: 0.7rem;
   padding: 0.15rem 0.5rem;

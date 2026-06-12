@@ -714,6 +714,50 @@ def sync_live_and_finished():
     try:
         sb = get_supabase()
 
+
+ Orphan rescue: partidos no-finished con sportmonks_id y now-2h < match_date ─        # ─
+        try:
+            from datetime import datetime, timezone, timedelta
+            _orp_cutoff = (datetime.now(timezone.utc) - timedelta(hours=2)).isoformat()
+            _orp_res = sb.table("matches").select("id,sportmonks_id,status").neq("status", "finished").lt("match_date", _orp_cutoff).not_.is_("sportmonks_id", "null").execute()
+            _orphans = _orp_res.data or []
+            if _orphans:
+                logger.info("Orphan rescue: %d partidos con sportmonks_id y match_date antiguo", len(_orphans))
+                for _om in _orphans:
+                    _sm_id = _om.get("sportmonks_id")
+                    if not _sm_id:
+                        continue
+                    try:
+                        _fx_raw = _sm_get(f"/fixtures/{_sm_id}", {"include": "participants;scores"})
+                        _fx = (_fx_raw.get("data") or {}) if _fx_raw else {}
+                        _p = _parse_fixture(_fx) if _fx else None
+                        if not _p:
+                            continue
+                        if _p.get("status") in ("finished",) and _p.get("home_score") is not None:
+                            sb.table("matches").update({
+                                "home_score": _p["home_score"],
+                                "away_score": _p["away_score"],
+                                "status": "finished",
+                                "predictions_locked": True,
+                            }).eq("id", _om["id"]).execute()
+                            try:
+                                sb.rpc("calculate_match_points", {"match_id_param": _om["id"]}).execute()
+                            except Exception:
+                                pass
+                            logger.info("Orphan rescued finished: match_id=%s sm=%s %s-%s", _om["id"], _sm_id, _p["home_score"], _p["away_score"])
+                        elif _p.get("status") == "live" and _p.get("home_score") is not None:
+                            sb.table("matches").update({
+                                "home_score": _p["home_score"],
+                                "away_score": _p["away_score"],
+                                "status": "live",
+                                "predictions_locked": True,
+                            }).eq("id", _om["id"]).execute()
+                            logger.info("Orphan updated live: match_id=%s sm=%s %s-%s", _om["id"], _sm_id, _p["home_score"], _p["away_score"])
+                    except Exception as _oe:
+                        logger.error("Orphan fetch sm_id=%s: %s", _sm_id, _oe)
+        except Exception as _orp_e:
+            logger.error("Orphan rescue failed: %s", _orp_e)
+
         # ── Lockear partidos que empiezan en menos de 30 minutos ──────────────────
         try:
             from datetime import datetime, timezone, timedelta
@@ -734,8 +778,9 @@ def sync_live_and_finished():
         from datetime import date
         today = date.today().isoformat()
         try:
-            from datetime import date as _date
+            from datetime import date as _date, timedelta as _td
             _today = _date.today().isoformat()
+            _yesterday = (_date.today() - _td(days=1)).isoformat()
             _all_today = []
             _page = 1
             while True:
@@ -749,7 +794,7 @@ def sync_live_and_finished():
                     }
                 )
                 _chunk = _d.get("data") or []
-                _all_today.extend([x for x in _chunk if (x.get("starting_at") or "")[:10] == _today])
+                _all_today.extend([x for x in _chunk if (x.get("starting_at") or "")[:10] >= _yesterday])
                 _pag = _d.get("pagination") or {}
                 if not _pag.get("has_more", False):
                     break

@@ -198,7 +198,7 @@ async def get_rival_predictions(username: str):
     user_data = user_res.data
 
     # Calcular el corte: now - 30 minutos en UTC
-    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=30)).isoformat()
+    cutoff = (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat()
 
     # Traer predicciones del usuario (sin join embebido)
     preds_res = sb.table("predictions").select(
@@ -227,7 +227,7 @@ async def get_rival_predictions(username: str):
         match_date_str = m.get("match_date", "")
         try:
             match_dt = datetime.fromisoformat(match_date_str.replace("Z", "+00:00"))
-            if match_status == "finished" or match_dt <= cutoff_dt:
+            if match_status != "scheduled" or match_dt <= cutoff_dt:
                 p["matches"] = m
                 visible.append(p)
         except Exception:

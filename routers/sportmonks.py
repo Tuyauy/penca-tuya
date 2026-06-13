@@ -7,7 +7,7 @@ import logging
 from typing import Optional
 import httpx
 from fastapi import APIRouter
-from database import get_supabase
+from database import get_supase
 
 logger = logging.getLogger(__name__)
 
@@ -785,7 +785,7 @@ def sync_live_and_finished():
             _page = 1
             while True:
                 _d = _sm_get(
-                    "/fixtures",
+                    f"/fixtures/between/2026-06-11/2026-07-19",
                     {
                         "filters": f"fixtureLeagues:{SM_LEAGUE_ID}",
                         "include": "participants;scores;state",

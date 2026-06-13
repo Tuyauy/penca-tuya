@@ -7,7 +7,7 @@ import logging
 from typing import Optional
 import httpx
 from fastapi import APIRouter
-from database import get_supase
+from database import get_supabase
 
 logger = logging.getLogger(__name__)
 

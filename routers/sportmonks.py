@@ -807,6 +807,7 @@ def sync_live_and_finished():
             return
 
         fixtures = data.get("data") or []
+        logger.info("[SYNC] Sportmonks fixtures hoy: %d", len(fixtures))
         if not fixtures:
             return
 
@@ -814,6 +815,8 @@ def sync_live_and_finished():
 
         # ── Build a map: sportmonks_id -> parsed fixture ───────────────────
         sm_map = {f["sportmonks_id"]: f for f in [_parse_fixture(fx) for fx in fixtures]}
+        for _fx_dbg in list(sm_map.values())[:5]:
+            logger.info("[SYNC] Fixture SM: sm_id=%s state=%s score=%s-%s", _fx_dbg.get('sportmonks_id'), _fx_dbg.get('status'), _fx_dbg.get('home_score'), _fx_dbg.get('away_score'))
 
         # ── Load our matches that reference sportmonks_id ──────────────────
         sm_ids = list(sm_map.keys())

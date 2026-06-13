@@ -76,24 +76,24 @@ def _sm_state_to_status(state_short: str) -> str:
 def _parse_fixture(f: dict) -> dict:
     state     = (f.get("state") or {}).get("short_name", "")
     scores_raw = f.get("scores")
-        # Sportmonks v3: scores can be a list of score objects or a dict
-        home_score = None
+    # Sportmonks v3: scores can be a list of score objects or a dict
+    home_score = None
     away_score = None
     logger.info("[DIAG] _parse_fixture id=%s state=%s scores_type=%s scores_raw=%s", f.get("id"), (f.get("state") or {}).get("short_name"), type(scores_raw).__name__, str(scores_raw)[:300])
     if isinstance(scores_raw, list):
-                for _sc in scores_raw:
-                                _sc_type = (_sc.get("type") or {}).get("developer_name", "") if isinstance(_sc.get("type"), dict) else ""
-                                _score_obj = _sc.get("score") or {}
-                                _goals = _score_obj.get("goals")
-                                _participant = _score_obj.get("participant", "")
-                                if "FT" in _sc_type or _sc.get("type_id") in (1525, 1):
-                                                    if _participant == "home" and _goals is not None:
-                                                                            home_score = _goals
-                                                    elif _participant == "away" and _goals is not None:
-                                                                            away_score = _goals
-                                                    elif isinstance(scores_raw, dict) and scores_raw:
-                                                                home_score = scores_raw.get("localteam_score") if scores_raw.get("localteam_score") is not None else scores_raw.get("home_score")
-                                                                away_score = scores_raw.get("visitorteam_score") if scores_raw.get("visitorteam_score") is not None else scores_raw.get("away_score")
+        for _sc in scores_raw:
+            _sc_type = (_sc.get("type") or {}).get("developer_name", "") if isinstance(_sc.get("type"), dict) else ""
+            _score_obj = _sc.get("score") or {}
+            _goals = _score_obj.get("goals")
+            _participant = _score_obj.get("participant", "")
+                if "FT" in _sc_type or _sc.get("type_id") in (1525, 1):
+                    if _participant == "home" and _goals is not None:
+                        home_score = _goals
+                    elif _participant == "away" and _goals is not None:
+                        away_score = _goals
+    elif isinstance(scores_raw, dict) and scores_raw:
+        home_score = scores_raw.get("localteam_score") if scores_raw.get("localteam_score") is not None else scores_raw.get("home_score")
+        away_score = scores_raw.get("visitorteam_score") if scores_raw.get("visitorteam_score") is not None else scores_raw.get("away_score")
 
     participants = f.get("participants") or []
     home_team_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "home"), None)

@@ -86,7 +86,7 @@ def _parse_fixture(f: dict) -> dict:
             _score_obj = _sc.get("score") or {}
             _goals = _score_obj.get("goals")
             _participant = _score_obj.get("participant", "")
-            if "FT" in _sc_type or _sc.get("type_id") in (1525, 1):
+                        if _sc.get("type_id") == 1525 or (_sc.get("description") or "").upper() in ("CURRENT", "FT_FINAL", "FT"):
                 if _participant == "home" and _goals is not None:
                     home_score = _goals
                 elif _participant == "away" and _goals is not None:

@@ -9,12 +9,20 @@ load_dotenv()
 
 _supabase: Client = None
 
+
 def get_supabase() -> Client:
-    global _supabase
-    if _supabase is None:
-        url = os.getenv("SUPABASE_URL")
-        key = os.getenv("SUPABASE_SERVICE_KEY")  # service role for backend
+        global _supabase
+        if _supabase is None:
+                    url = os.getenv("SUPABASE_URL")
+                    key = os.getenv("SUPABASE_SERVICE_KEY")  # service role for backend
         if not url or not key:
-            raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set")
-        _supabase = create_client(url, key)
+                        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set")
+                    _supabase = create_client(url, key)
     return _supabase
+
+
+def reset_supabase():
+        """Resetea el cliente Supabase para forzar reconexión en la siguiente llamada.
+            Llamar cuando se detecta RemoteProtocolError o Server disconnected."""
+    global _supabase
+    _supabase = None

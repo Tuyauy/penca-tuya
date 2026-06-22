@@ -937,3 +937,29 @@ def _refresh_provisional_totals(sb, match_ids: list):
                 pass
     except Exception as e:
         logger.error("_refresh_provisional_totals error: %s", e)
+
+
+
+# ── Bug2 fix: Fallback para partidos sin sportmonks_id vencidos ─────────────
+def _fix_stale_matches_without_sm_id(sb) -> int:
+    """Detecta partidos scheduled sin sportmonks_id cuya fecha ya paso hace >3h.
+    Los marca pending_review para que no aparezcan como en juego en el ranking."""
+    from datetime import datetime, timezone, timedelta
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(hours=3)).isoformat()
+        res = sb.table("matches").select("id,match_date").is_(
+            "sportmonks_id", "null"
+        ).eq("status", "scheduled").lt("match_date", cutoff).execute()
+        stale = res.data or []
+        if not stale:
+            return 0
+        ids = [m["id"] for m in stale]
+        sb.table("matches").update({
+            "status": "pending_review",
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }).in_("id", ids).execute()
+        logger.warning("Bug2 fallback: %d partidos sin sm_id -> pending_review: %s", len(ids), ids)
+        return len(ids)
+    except Exception as e:
+        logger.error("_fix_stale_matches_without_sm_id error: %s", e)
+        return 0

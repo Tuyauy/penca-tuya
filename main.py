@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 from routers import auth, matches, predictions, ranking, admin, purchases, sportmonks
-from database import get_supabase
+from database import get_supabase, reset_supabase
 
 load_dotenv()
 
@@ -36,6 +36,20 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── Middleware de reconexión Supabase (Bug1 fix) ──────────────────────────────
+@app.middleware("http")
+async def supabase_reconnect_middleware(request: Request, call_next):
+        """Resetea el cliente Supabase si hay un error de conexión Server disconnected."""
+        try:
+                    response = await call_next(request)
+                    return response
+        except Exception as e:
+                    err_str = str(e)
+                    if "Server disconnected" in err_str or "RemoteProtocol" in err_str:
+                                    reset_supabase()
+                                raise
 
 # Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])

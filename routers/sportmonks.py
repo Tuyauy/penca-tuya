@@ -726,6 +726,7 @@ def sync_live_and_finished():
         return
     try:
         sb = get_supabase()
+        logger.info("sync_live_and_finished: START")
 
 
         # Orphan rescue: partidos no-finished con sportmonks_id y match_date < now-2h

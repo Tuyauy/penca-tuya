@@ -1026,3 +1026,101 @@ def _fix_stale_matches_without_sm_id(sb) -> int:
     except Exception as e:
         logger.error("_fix_stale_matches_without_sm_id error: %s", e)
         return 0
+
+
+@router.get("/debug/sm-fixtures")
+async def debug_sm_fixtures():
+    """
+    Temporary diagnostic endpoint.
+    Makes two Sportmonks API calls and reports counts, date ranges, and whether Francia vs Irak appears.
+    """
+    if not SM_API_KEY:
+        return {"ok": False, "error": "SPORTMONKS_API_KEY not configured"}
+
+    import httpx as _httpx
+
+    def _paginated_fetch(filter_param):
+        all_fixtures = []
+        page = 1
+        last_page = 1
+        errors = []
+        while page <= last_page:
+            try:
+                r = _httpx.get(
+                    f"{SM_BASE}/fixtures",
+                    headers={"Authorization": SM_API_KEY},
+                    params={
+                        "filters": filter_param,
+                        "include": "participants;scores;state",
+                        "per_page": 25,
+                        "page": page,
+                    },
+                    timeout=20,
+                )
+                body = r.json()
+                if r.status_code != 200:
+                    errors.append(f"page {page}: status {r.status_code} | {body.get('message','')[:120]}")
+                    break
+                data = body.get("data") or []
+                all_fixtures.extend(data)
+                pagination = body.get("pagination") or {}
+                last_page = pagination.get("last_page", 1)
+                if page >= last_page:
+                    break
+                page += 1
+            except Exception as e:
+                errors.append(f"page {page}: {e}")
+                break
+        return all_fixtures, errors
+
+    def _summarize(fixtures, filter_label):
+        total = len(fixtures)
+        if not total:
+            return {
+                "filter": filter_label, "total": 0,
+                "first_starting_at": None, "last_starting_at": None,
+                "francia_irak": None, "sample_fixtures": [],
+            }
+        dates_sorted = sorted(f.get("starting_at", "") for f in fixtures if f.get("starting_at"))
+        first_date = dates_sorted[0] if dates_sorted else None
+        last_date = dates_sorted[-1] if dates_sorted else None
+
+        # Find Francia vs Irak
+        target_fra = {"france", "francia"}
+        target_irq = {"iraq", "irak"}
+        francia_irak = None
+        for f in fixtures:
+            parts = f.get("participants") or []
+            names = {_normalize_team_name(p.get("name", "") or "") for p in parts}
+            codes = {(p.get("short_code") or p.get("code") or "").upper() for p in parts}
+            if (names & target_fra or "FRA" in codes) and (names & target_irq or "IRQ" in codes):
+                francia_irak = {
+                    "sm_id": f.get("id"),
+                    "starting_at": f.get("starting_at"),
+                    "participants": [{"name": p.get("name"), "code": p.get("short_code") or p.get("code")} for p in parts],
+                }
+                break
+
+        def _fx(fx):
+            parts = fx.get("participants") or []
+            return {"id": fx.get("id"), "starting_at": fx.get("starting_at"),
+                    "teams": [p.get("name") for p in parts],
+                    "codes": [p.get("short_code") or p.get("code") for p in parts]}
+
+        by_date = sorted(fixtures, key=lambda x: x.get("starting_at", ""))
+        sample = [_fx(x) for x in by_date[:3]] + [_fx(x) for x in by_date[-3:]]
+
+        return {
+            "filter": filter_label, "total": total,
+            "first_starting_at": first_date, "last_starting_at": last_date,
+            "francia_irak": francia_irak, "sample_fixtures": sample,
+        }
+
+    call1_fixtures, call1_errors = _paginated_fetch("fixtureLeagues:732")
+    call2_fixtures, call2_errors = _paginated_fetch("fixtureSeasons:26618")
+
+    return {
+        "ok": True,
+        "call1_fixtureLeagues_732": {**_summarize(call1_fixtures, "fixtureLeagues:732"), "errors": call1_errors},
+        "call2_fixtureSeasons_26618": {**_summarize(call2_fixtures, "fixtureSeasons:26618"), "errors": call2_errors},
+    }

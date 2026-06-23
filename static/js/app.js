@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===== AUTH =====
 function loadAuth() {
   currentToken = localStorage.getItem('penca_token');
-  // Verificar si el token está vencido
+  // Verificar si el token estÃ¡ vencido
   if (currentToken) {
     try {
       const payload = JSON.parse(atob(currentToken.split('.')[1]));
@@ -98,7 +98,7 @@ function logout() {
   currentToken = null;
   renderNavAuth();
   navigate('home');
-  showToast('Sesión cerrada');
+  showToast('SesiÃ³n cerrada');
 }
 
 // ===== NAVIGATION =====
@@ -129,14 +129,14 @@ function toggleMenu() {
   const btn = document.getElementById('menuToggle');
   if (!menu) return;
   menu.classList.toggle('open');
-  if (btn) btn.textContent = menu.classList.contains('open') ? '✕' : '☰';
+  if (btn) btn.textContent = menu.classList.contains('open') ? 'â' : 'â°';
 }
 
 function closeMenu() {
   const menu = document.getElementById('navMenu');
   const btn = document.getElementById('menuToggle');
   if (menu) menu.classList.remove('open');
-  if (btn) btn.textContent = '☰';
+  if (btn) btn.textContent = 'â°';
 }
 
 function adjustScore(id, delta) {
@@ -191,8 +191,8 @@ function _tickCountdown() {
     const emptyTimer = '<span class="cd-sep">--</span>';
     if (timerEl) timerEl.innerHTML = emptyTimer;
     if (fTimerEl) fTimerEl.innerHTML = emptyTimer;
-    if (labelEl) labelEl.textContent = 'Próximo partido';
-    if (noteEl) noteEl.textContent = 'El próximo partido aún no tiene fecha confirmada.';
+    if (labelEl) labelEl.textContent = 'PrÃ³ximo partido';
+    if (noteEl) noteEl.textContent = 'El prÃ³ximo partido aÃºn no tiene fecha confirmada.';
     return;
   }
 
@@ -210,7 +210,7 @@ function _tickCountdown() {
   const hours = Math.floor((totalSecs % 86400) / 3600).toString().padStart(2, '0');
   const mins  = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
   const secs  = (totalSecs % 60).toString().padStart(2, '0');
-  const sep   = '<span class="cd-sep"> · </span>';
+  const sep   = '<span class="cd-sep"> Â· </span>';
 
   const timeHtml = days > 0
     ? `${days}d${sep}${hours}:${mins}:${secs}`
@@ -228,7 +228,7 @@ function _tickCountdown() {
 
   const isUrgent = diff < 30 * 60 * 1000;
 
-  // ─ Home countdown ─
+  // â Home countdown â
   if (timerEl) timerEl.innerHTML = timeHtml;
 
   const matchInfoEl = document.getElementById('countdownMatchInfo');
@@ -236,20 +236,20 @@ function _tickCountdown() {
 
   if (isUrgent) {
     const minsLeft = Math.ceil(diff / 60000);
-    if (labelEl) labelEl.textContent = '⚠️ ¡Último momento!';
-    if (noteEl) { noteEl.textContent = `Cerramos pronósticos en ${minsLeft} minuto${minsLeft !== 1 ? 's' : ''}.`; noteEl.classList.add('urgent'); }
+    if (labelEl) labelEl.textContent = 'â ï¸ Â¡Ãltimo momento!';
+    if (noteEl) { noteEl.textContent = `Cerramos pronÃ³sticos en ${minsLeft} minuto${minsLeft !== 1 ? 's' : ''}.`; noteEl.classList.add('urgent'); }
     if (timerEl) timerEl.classList.add('urgent');
     if (cardEl)  cardEl.classList.add('urgent');
   } else {
-    if (labelEl) labelEl.textContent = 'Próximo partido';
-    if (noteEl)  { noteEl.textContent = 'Tenés hasta 30 minutos antes del inicio de cada partido para hacer tu pronóstico.'; noteEl.classList.remove('urgent'); }
+    if (labelEl) labelEl.textContent = 'PrÃ³ximo partido';
+    if (noteEl)  { noteEl.textContent = 'TenÃ©s hasta 30 minutos antes del inicio de cada partido para hacer tu pronÃ³stico.'; noteEl.classList.remove('urgent'); }
     if (timerEl) timerEl.classList.remove('urgent');
     if (cardEl)  cardEl.classList.remove('urgent');
   }
 
-  // ─ Fixture compact countdown ─
+  // â Fixture compact countdown â
   if (fTimerEl) fTimerEl.innerHTML = timeHtml;
-  if (fLabelEl) fLabelEl.textContent = isUrgent ? '⚠️ Cierra pronto' : 'Próximo partido';
+  if (fLabelEl) fLabelEl.textContent = isUrgent ? 'â ï¸ Cierra pronto' : 'PrÃ³ximo partido';
   if (fMatchEl) fMatchEl.textContent = `${homeFlag} ${homeName} vs ${awayName} ${awayFlag}`;
   if (fTimerEl) { isUrgent ? fTimerEl.classList.add('urgent') : fTimerEl.classList.remove('urgent'); }
 }
@@ -266,7 +266,7 @@ async function loadHomeUpcoming() {
     if (!_upcomingMatches.length) _upcomingMatches = matches;
 
     if (!matches.length) {
-      container.innerHTML = '<p class="empty-state">No hay partidos próximos confirmados aún.</p>';
+      container.innerHTML = '<p class="empty-state">No hay partidos prÃ³ximos confirmados aÃºn.</p>';
       return;
     }
 
@@ -287,14 +287,14 @@ async function loadHomeUpcoming() {
       let btnHtml = '';
       if (!isClosed) {
         if (currentUser) {
-          const label = pred ? '✏️ Editar pronóstico' : 'Pronosticar';
+          const label = pred ? 'âï¸ Editar pronÃ³stico' : 'Pronosticar';
           const cls = pred ? 'home-mc-btn' : 'home-mc-btn';
           btnHtml = `<button class="${cls}" onclick="openPredModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">${label}</button>`;
         } else {
           btnHtml = `<button class="home-mc-btn secondary" onclick="navigate('register')">Registrate para pronosticar</button>`;
         }
       } else if (isClosed && !isFinished && !isLive) {
-        btnHtml = `<span class="match-closed-badge">🔒 Pronósticos cerrados</span>`;
+        btnHtml = `<span class="match-closed-badge">ð PronÃ³sticos cerrados</span>`;
       }
 
       return `<div class="home-match-card">
@@ -335,10 +335,10 @@ async function loadTop3() {
     const data = await apiFetch('/api/ranking/top3');
     const container = document.getElementById('top3Container');
     if (!data || data.length === 0) {
-      container.innerHTML = '<p class="empty-state">El ranking estará disponible cuando arranque el mundial 🏟️</p>';
+      container.innerHTML = '<p class="empty-state">El ranking estarÃ¡ disponible cuando arranque el mundial ðï¸</p>';
       return;
     }
-    const medals = ['🥇', '🥈', '🥉'];
+    const medals = ['ð¥', 'ð¥', 'ð¥'];
     const posClasses = ['gold', 'silver', 'bronze'];
     container.innerHTML = `
       <div class="top3-grid">
@@ -361,26 +361,26 @@ async function loadGroups() {
   container.innerHTML = '<div class="loading">Cargando tablas de posiciones...</div>';
 
   const staticGroups = [
-    { group: 'A', teams: [ { name: 'México', code: 'MEX', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Sudáfrica', code: 'ZAF', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Rep. de Corea', code: 'KOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Chequia', code: 'CZE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'B', teams: [ { name: 'Canadá', code: 'CAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Bosnia y Herzegovina', code: 'BIH', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Catar', code: 'QAT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Suiza', code: 'SUI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'C', teams: [ { name: 'Brasil', code: 'BRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Marruecos', code: 'MAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Haití', code: 'ht', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Escocia', code: 'SCO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'D', teams: [ { name: 'EE. UU.', code: 'USA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Paraguay', code: 'py', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Australia', code: 'AUS', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Turquía', code: 'TUR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'A', teams: [ { name: 'MÃ©xico', code: 'MEX', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'SudÃ¡frica', code: 'ZAF', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Rep. de Corea', code: 'KOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Chequia', code: 'CZE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'B', teams: [ { name: 'CanadÃ¡', code: 'CAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Bosnia y Herzegovina', code: 'BIH', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Catar', code: 'QAT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Suiza', code: 'SUI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'C', teams: [ { name: 'Brasil', code: 'BRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Marruecos', code: 'MAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'HaitÃ­', code: 'ht', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Escocia', code: 'SCO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'D', teams: [ { name: 'EE. UU.', code: 'USA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Paraguay', code: 'py', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Australia', code: 'AUS', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'TurquÃ­a', code: 'TUR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'E', teams: [ { name: 'Alemania', code: 'GER', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Curazao', code: 'CUW', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Costa de Marfil', code: 'CIV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Ecuador', code: 'ECU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'F', teams: [ { name: 'Países Bajos', code: 'NED', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Japón', code: 'JPN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Suecia', code: 'SWE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Túnez', code: 'TUN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'G', teams: [ { name: 'Bélgica', code: 'BEL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Egipto', code: 'EGY', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'RI de Irán', code: 'IRN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Nueva Zelanda', code: 'NZL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'H', teams: [ { name: 'España', code: 'ESP', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Is. Cabo Verde', code: 'CPV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Arabia Saudí', code: 'KSA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Uruguay', code: 'URU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'F', teams: [ { name: 'PaÃ­ses Bajos', code: 'NED', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'JapÃ³n', code: 'JPN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Suecia', code: 'SWE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'TÃºnez', code: 'TUN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'G', teams: [ { name: 'BÃ©lgica', code: 'BEL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Egipto', code: 'EGY', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'RI de IrÃ¡n', code: 'IRN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Nueva Zelanda', code: 'NZL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'H', teams: [ { name: 'EspaÃ±a', code: 'ESP', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Is. Cabo Verde', code: 'CPV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Arabia SaudÃ­', code: 'KSA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Uruguay', code: 'URU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'I', teams: [ { name: 'Francia', code: 'FRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Senegal', code: 'SEN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Irak', code: 'IRQ', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Noruega', code: 'NOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
     { group: 'J', teams: [ { name: 'Argentina', code: 'ARG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Argelia', code: 'dz', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Austria', code: 'AUT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Jordania', code: 'JOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'K', teams: [ { name: 'Portugal', code: 'POR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'RD Congo', code: 'COD', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Uzbekistán', code: 'UZB', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Colombia', code: 'COL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
-    { group: 'L', teams: [ { name: 'Inglaterra', code: 'ENG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Croacia', code: 'CRO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Ghana', code: 'GHA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Panamá', code: 'PAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]}
+    { group: 'K', teams: [ { name: 'Portugal', code: 'POR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'RD Congo', code: 'COD', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'UzbekistÃ¡n', code: 'UZB', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Colombia', code: 'COL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'L', teams: [ { name: 'Inglaterra', code: 'ENG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Croacia', code: 'CRO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Ghana', code: 'GHA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'PanamÃ¡', code: 'PAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]}
   ];
 
   // Extra flags for teams not in the main teamFlag() map
   const extraFlags = {
-    'BIH':'🇧🇦','QAT':'🇶🇦','SUI':'🇨🇭','ht':'🇭🇹','HTI':'🇭🇹','HAI':'🇭🇹','py':'🇵🇾','PRY':'🇵🇾','PAR':'🇵🇾','CUW':'🇨🇼','CIV':'🇨🇮',
-    'SWE':'🇸🇪','TUN':'🇹🇳','EGY':'🇪🇬','NZL':'🇳🇿','CPV':'🇨🇻','NOR':'🇳🇴','dz':'🇩🇿','DZA':'🇩🇿','ALG':'🇩🇿',
-    'JOR':'🇯🇴','COD':'🇨🇩','GHA':'🇬🇭','ZAF':'🇿🇦','KOR':'🇰🇷','CZE':'🇨🇿','KSA':'🇸🇦',
-    'IRQ':'🇮🇶','UZB':'🇺🇿','SCO':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','TUR':'🇹🇷','IRN':'🇮🇷','MAR':'🇲🇦',
+    'BIH':'ð§ð¦','QAT':'ð¶ð¦','SUI':'ð¨ð­','ht':'ð­ð¹','HTI':'ð­ð¹','HAI':'ð­ð¹','py':'ðµð¾','PRY':'ðµð¾','PAR':'ðµð¾','CUW':'ð¨ð¼','CIV':'ð¨ð®',
+    'SWE':'ð¸ðª','TUN':'ð¹ð³','EGY':'ðªð¬','NZL':'ð³ð¿','CPV':'ð¨ð»','NOR':'ð³ð´','dz':'ð©ð¿','DZA':'ð©ð¿','ALG':'ð©ð¿',
+    'JOR':'ð¯ð´','COD':'ð¨ð©','GHA':'ð¬ð­','ZAF':'ð¿ð¦','KOR':'ð°ð·','CZE':'ð¨ð¿','KSA':'ð¸ð¦',
+    'IRQ':'ð®ð¶','UZB':'ðºð¿','SCO':'ð´ó §ó ¢ó ³ó £ó ´ó ¿','TUR':'ð¹ð·','IRN':'ð®ð·','MAR':'ð²ð¦',
   };
   function getFlag(code) { return extraFlags[code] || teamFlag(code); }
 
@@ -420,7 +420,7 @@ async function loadGroups() {
     if (data && data.groups && data.groups.length >= 12 &&
         data.groups[0].teams && data.groups[0].teams.length === 4 &&
         data.groups[0].teams[0].name && data.groups[0].teams[0].name !== '?') {
-      // Map SM codes/names to display — use SM names directly, match flag by code
+      // Map SM codes/names to display â use SM names directly, match flag by code
       groups = data.groups.map(g => ({
         group: g.group,
         teams: g.teams.map(t => ({
@@ -446,7 +446,7 @@ async function loadFixture(phase) {
     const token = currentToken ? `Bearer ${currentToken}` : null;
     const data = await apiFetch(`/api/matches/?phase=${phase}`, {}, token);
     if (!data.phases || data.phases.length === 0) {
-      container.innerHTML = '<p class="empty-state">Todavía no hay partidos cargados para esta fase. ¡Volvé pronto! ⚽</p>';
+      container.innerHTML = '<p class="empty-state">TodavÃ­a no hay partidos cargados para esta fase. Â¡VolvÃ© pronto! â½</p>';
       return;
     }
     let html = '';
@@ -493,9 +493,9 @@ async function loadFixture(phase) {
         }
       }
     }
-    container.innerHTML = html || '<p class="empty-state">No hay partidos en esta fase aún.</p>';
+    container.innerHTML = html || '<p class="empty-state">No hay partidos en esta fase aÃºn.</p>';
   } catch (e) {
-    container.innerHTML = '<p class="empty-state">Error cargando partidos. Intentá de nuevo.</p>';
+    container.innerHTML = '<p class="empty-state">Error cargando partidos. IntentÃ¡ de nuevo.</p>';
   }
 }
 function renderMatchList(matches, phase) {
@@ -522,7 +522,7 @@ function renderMatchCard(m, phase) {
 
   // Date + venue
   const dateStr = m.match_date ? formatMatchDate(m.match_date) : 'Fecha a confirmar';
-  const venueStr = (m.venue || m.city) ? ` · ${escHtml(m.venue || m.city)}` : '';
+  const venueStr = (m.venue || m.city) ? ` Â· ${escHtml(m.venue || m.city)}` : '';
   const metaLine = dateStr + venueStr;
 
   // User prediction scores to display
@@ -536,9 +536,9 @@ function renderMatchCard(m, phase) {
     // Points badge
     if (pred && pred.points_calculated) {
       const pts = pred.points_earned;
-      const label = pts === 10 ? '🎯 Exacto' : pts === 7 ? '✅ Empate OK' : pts === 5 ? '↔️ Diferencia' : pts === 3 ? '👍 Ganador' : '❌ Perdiste';
+      const label = pts === 10 ? 'ð¯ Exacto' : pts === 7 ? 'â Empate OK' : pts === 5 ? 'âï¸ Diferencia' : pts === 3 ? 'ð Ganador' : 'â Perdiste';
       const predStr = `${pred.predicted_home_score}-${pred.predicted_away_score}`;
-      predResultHtml = `<div class="mc-pred-badge pts-${pts}">${label} <strong>${pts} pts</strong><br><small>Tu pronóstico: ${predStr}</small></div>`;
+      predResultHtml = `<div class="mc-pred-badge pts-${pts}">${label} <strong>${pts} pts</strong><br><small>Tu pronÃ³stico: ${predStr}</small></div>`;
     }
   } else if (isLive) {
     homeScoreDisplay = `<span class="mc-score-num live">${m.home_score ?? '?'}</span>`;
@@ -547,8 +547,8 @@ function renderMatchCard(m, phase) {
     if (pred && m.home_score != null && m.away_score != null) {
       const prov = pred.provisional_points;
       if (prov != null) {
-        const provLabel = prov === 10 ? '🎯 Exacto' : prov === 7 ? '✅ Empate OK' : prov === 5 ? '↔️ Diferencia' : prov === 3 ? '👍 Ganador' : '❌ Sin puntos';
-        predResultHtml = `<div class="mc-pred-badge pts-prov">⏱️ En vivo: ${provLabel} <strong>${prov} pts provisorios</strong></div>`;
+        const provLabel = prov === 10 ? 'ð¯ Exacto' : prov === 7 ? 'â Empate OK' : prov === 5 ? 'âï¸ Diferencia' : prov === 3 ? 'ð Ganador' : 'â Sin puntos';
+        predResultHtml = `<div class="mc-pred-badge pts-prov">â±ï¸ En vivo: ${provLabel} <strong>${prov} pts provisorios</strong></div>`;
       }
     }
   } else {
@@ -565,7 +565,7 @@ function renderMatchCard(m, phase) {
   // VS / live / result separator
   let centerSep;
   if (isLive) {
-    centerSep = `<span class="mc-vs live-dot">🔴 EN VIVO</span>`;
+    centerSep = `<span class="mc-vs live-dot">ð´ EN VIVO</span>`;
   } else if (isFinished) {
     centerSep = `<span class="mc-vs finished">-</span>`;
   } else {
@@ -575,14 +575,14 @@ function renderMatchCard(m, phase) {
   // Action button
   let actionHtml = '';
   if (!isClosed && !isFinished && !isLive && currentUser) {
-    const btnLabel = pred ? '✏️ Editar' : 'Pronosticar';
+    const btnLabel = pred ? 'âï¸ Editar' : 'Pronosticar';
     const btnClass = pred ? 'mc-btn predicted' : 'mc-btn';
     actionHtml = `<button class="${btnClass}" onclick="openPredModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">${btnLabel}</button>`;
   } else if (!currentUser && !isFinished && !isClosed && !isLive) {
     actionHtml = `<button class="mc-btn" onclick="navigate('register')">Registrate para pronosticar</button>`;
   
   } else if (isClosed && !isFinished && !isLive) {
-    actionHtml = `<span class="match-closed-badge">🔒 Pronósticos cerrados</span>`;
+    actionHtml = `<span class="match-closed-badge">ð PronÃ³sticos cerrados</span>`;
   }
 
   // ET/PK note for finished KO matches
@@ -630,7 +630,7 @@ function openPredModal(match) {
   const awayName = awayTeam.name || match.away_team_placeholder || '?';
   const isKnockout = ['r16','qf','sf','third','final'].includes(match.phase);
 
-  document.getElementById('modalTitle').textContent = 'Pronosticá este partido';
+  document.getElementById('modalTitle').textContent = 'PronosticÃ¡ este partido';
   document.getElementById('modalMatchInfo').textContent = match.match_date ? formatMatchDate(match.match_date) : '';
   document.getElementById('predHomeFlag').innerHTML = teamFlagHtml(homeTeam);
   document.getElementById('predHomeName').textContent = homeName;
@@ -685,16 +685,16 @@ function checkKnockoutDraw() {
   }
 }
 
-// Called when ET or PK radio changes — show the winner selector with correct label
+// Called when ET or PK radio changes â show the winner selector with correct label
 function onResolveChange() {
   const resolveVal = document.querySelector('input[name="resolve"]:checked')?.value;
   const winnerSection = document.getElementById('koWinnerSection');
   const label = document.getElementById('koWinnerLabel');
   if (resolveVal === 'et') {
-    label.textContent = '¿Quién gana en tiempo extra?';
+    label.textContent = 'Â¿QuiÃ©n gana en tiempo extra?';
     winnerSection.style.display = 'block';
   } else if (resolveVal === 'pk') {
-    label.textContent = '¿Quién gana en penales?';
+    label.textContent = 'Â¿QuiÃ©n gana en penales?';
     winnerSection.style.display = 'block';
   } else {
     winnerSection.style.display = 'none';
@@ -740,11 +740,11 @@ async function submitPrediction(e) {
   if (isKnockout && isDraw) {
     const resolveVal = document.querySelector('input[name="resolve"]:checked')?.value;
     if (!resolveVal) {
-      showPredError('Indicá si se resuelve por tiempo extra o penales');
+      showPredError('IndicÃ¡ si se resuelve por tiempo extra o penales');
       return;
     }
     if (!selectedKoWinner) {
-      showPredError(resolveVal === 'pk' ? 'Indicá qué equipo gana los penales' : 'Indicá qué equipo gana en tiempo extra');
+      showPredError(resolveVal === 'pk' ? 'IndicÃ¡ quÃ© equipo gana los penales' : 'IndicÃ¡ quÃ© equipo gana en tiempo extra');
       return;
     }
     extraTime = true;
@@ -775,12 +775,12 @@ async function submitPrediction(e) {
     }, `Bearer ${currentToken}`);
 
     closePredModal();
-    showToast('¡Pronóstico guardado! ⚽', 'success');
+    showToast('Â¡PronÃ³stico guardado! â½', 'success');
     loadFixture(currentPhase);
   } catch (err) {
-    showPredError(err.message || 'Error al guardar el pronóstico');
+    showPredError(err.message || 'Error al guardar el pronÃ³stico');
   } finally {
-    btn.textContent = 'GUARDAR PRONÓSTICO';
+    btn.textContent = 'GUARDAR PRONÃSTICO';
     btn.disabled = false;
   }
 }
@@ -808,7 +808,7 @@ async function loadRanking() {
       banner.style.display = 'flex';
       banner.innerHTML = `
         <div>
-          <strong style="font-family:var(--font-display);font-size:1.2rem;letter-spacing:1px">TU POSICIÓN</strong><br>
+          <strong style="font-family:var(--font-display);font-size:1.2rem;letter-spacing:1px">TU POSICIÃN</strong><br>
           <span style="color:var(--gray);font-size:0.85rem">${escHtml(pos.username)}</span>
         </div>
         <div style="text-align:right">
@@ -821,11 +821,11 @@ async function loadRanking() {
     }
 
     if (!data.ranking || data.ranking.length === 0) {
-      container.innerHTML = '<p class="empty-state">El ranking estará disponible cuando empiece el mundial 🏆</p>';
+      container.innerHTML = '<p class="empty-state">El ranking estarÃ¡ disponible cuando empiece el mundial ð</p>';
       return;
     }
 
-    const medals = { 1: '🥇', 2: '🥈', 3: '🥉' };
+    const medals = { 1: 'ð¥', 2: 'ð¥', 3: 'ð¥' };
     const posClass = { 1: 'gold', 2: 'silver', 3: 'bronze' };
 
     const rows = data.ranking.map(u => {
@@ -834,16 +834,16 @@ async function loadRanking() {
       const medal = medals[pos] || pos;
       const cls = posClass[pos] || '';
       return `
-        <tr class="${isMe ? 'my-row' : ''}" data-username="${escHtml(u.username)}" style="cursor:pointer" onclick="navigate('rival', this.dataset.username)" title="Ver pronósticos de ${escHtml(u.username)}">
+        <tr class="${isMe ? 'my-row' : ''}" data-username="${escHtml(u.username)}" style="cursor:pointer" onclick="navigate('rival', this.dataset.username)" title="Ver pronÃ³sticos de ${escHtml(u.username)}">
           <td><span class="rank-pos ${cls}">${medal}</span></td>
           <td>
-            <div class="rank-username">${escHtml(u.username)}${isMe ? ' <small style="color:var(--gold)">← vos</small>' : ''}</div>
+            <div class="rank-username">${escHtml(u.username)}${isMe ? ' <small style="color:var(--gold)">â vos</small>' : ''}</div>
             ${u.full_name ? `<div style="font-size:0.75rem;color:var(--gray)">${escHtml(u.full_name)}</div>` : ''}
           </td>
           <td style="font-size:0.85rem;color:var(--gold);font-weight:700;text-align:center">${u.exact_results || 0}</td>
           <td>
             ${u.provisional_total != null && u.provisional_total !== u.total_points
-              ? `<div class="rank-points">${u.provisional_total} <span style="font-size:0.65rem;color:var(--gray)">⏱️</span></div>`
+              ? `<div class="rank-points">${u.provisional_total} <span style="font-size:0.65rem;color:var(--gray)">â±ï¸</span></div>`
               : `<div class="rank-points">${u.total_points}</div>`
             }
           </td>
@@ -857,7 +857,7 @@ async function loadRanking() {
           <tr>
             <th>#</th>
             <th>Jugador</th>
-            <th>🎯 Exactos</th>
+            <th>ð¯ Exactos</th>
             <th>Puntos</th>
           </tr>
         </thead>
@@ -884,7 +884,7 @@ async function loadProfile() {
     container.innerHTML = `
       <div class="profile-grid">
         <div class="profile-card">
-          <h3>👤 MIS DATOS</h3>
+          <h3>ð¤ MIS DATOS</h3>
           <div class="profile-stat">
             <span>Usuario</span>
             <span><strong>${escHtml(profile.username)}</strong></span>
@@ -905,61 +905,61 @@ async function loadProfile() {
         </div>
 
         <div class="profile-card">
-          <h3>🏆 MIS PUNTOS</h3>
+          <h3>ð MIS PUNTOS</h3>
           <div class="profile-stat">
             <span>Total</span>
             <span class="profile-stat-val" style="color:var(--gold)">${profile.total_points} pts</span>
           </div>
           <div class="profile-stat">
-            <span>⚽ Por pronósticos</span>
+            <span>â½ Por pronÃ³sticos</span>
             <span class="profile-stat-val">${profile.prediction_points}</span>
           </div>
           <div class="profile-stat">
-            <span>🛍️ Por compras TUYA</span>
+            <span>ðï¸ Por compras TUYA</span>
             <span class="profile-stat-val" style="color:var(--green)">${profile.purchase_points}</span>
           </div>
         </div>
 
         <div class="profile-card">
-          <h3>📊 MIS ESTADÍSTICAS</h3>
+          <h3>ð MIS ESTADÃSTICAS</h3>
           <div class="profile-stat">
-            <span>Pronósticos realizados</span>
+            <span>PronÃ³sticos realizados</span>
             <span class="profile-stat-val">${stats.total_predictions}</span>
           </div>
           <div class="profile-stat">
-            <span>🎯 Exactos (10 pts)</span>
+            <span>ð¯ Exactos (10 pts)</span>
             <span class="profile-stat-val" style="color:var(--gold)">${stats.exact_results}</span>
           </div>
           <div class="profile-stat">
-            <span>✅ Empate OK (7 pts)</span>
+            <span>â Empate OK (7 pts)</span>
             <span class="profile-stat-val" style="color:var(--green)">${stats.exact_draws}</span>
           </div>
           <div class="profile-stat">
-            <span>↔️ Diferencia exacta (5 pts)</span>
+            <span>âï¸ Diferencia exacta (5 pts)</span>
             <span class="profile-stat-val" style="color:var(--blue)">${stats.exact_differences}</span>
           </div>
           <div class="profile-stat">
-            <span>👍 Ganador correcto (3 pts)</span>
+            <span>ð Ganador correcto (3 pts)</span>
             <span class="profile-stat-val" style="color:var(--orange)">${stats.correct_winners}</span>
           </div>
           <div class="profile-stat">
-            <span>❌ Errados</span>
+            <span>â Errados</span>
             <span class="profile-stat-val" style="color:var(--gray)">${stats.misses}</span>
           </div>
         </div>
 
         <div class="profile-card">
-          <h3>💡 SUMÁ MÁS PUNTOS</h3>
-          <p style="color:var(--gray);font-size:0.9rem;margin-bottom:1rem">Cada compra en TUYA te suma <strong>10 puntos extra</strong> — igual que pronosticar el resultado exacto.</p>
-          <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1.5rem">Usá el mismo email con el que te registraste acá: <strong>${escHtml(profile.email)}</strong></p>
+          <h3>ð¡ SUMÃ MÃS PUNTOS</h3>
+          <p style="color:var(--gray);font-size:0.9rem;margin-bottom:1rem">Cada compra en TUYA te suma <strong>10 puntos extra</strong> â igual que pronosticar el resultado exacto.</p>
+          <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1.5rem">UsÃ¡ el mismo email con el que te registraste acÃ¡: <strong>${escHtml(profile.email)}</strong></p>
           <a href="https://tuyauy.com" target="_blank" class="btn-primary dark" style="display:block;text-align:center;text-decoration:none;padding:0.75rem">
-            IR A TUYAUY.COM ↗
+            IR A TUYAUY.COM â
           </a>
         </div>
       </div>
 
       <div style="margin-top:1rem;padding-bottom:3rem">
-        <h3 style="font-family:var(--font-display);font-size:1.2rem;letter-spacing:1px;margin-bottom:1rem">MIS PRONÓSTICOS</h3>
+        <h3 style="font-family:var(--font-display);font-size:1.2rem;letter-spacing:1px;margin-bottom:1rem">MIS PRONÃSTICOS</h3>
         <div id="myPredictions"><div class="loading">Cargando...</div></div>
       </div>
     `;
@@ -976,7 +976,7 @@ async function loadMyPredictions() {
   try {
     const preds = await apiFetch('/api/predictions/my', {}, `Bearer ${currentToken}`);
     if (!preds || preds.length === 0) {
-      container.innerHTML = '<p class="empty-state">Todavía no hiciste pronósticos. <a href="#" onclick="navigate(\'fixture\')">¡Ir al fixture!</a></p>';
+      container.innerHTML = '<p class="empty-state">TodavÃ­a no hiciste pronÃ³sticos. <a href="#" onclick="navigate(\'fixture\')">Â¡Ir al fixture!</a></p>';
       return;
     }
     container.innerHTML = preds.map(p => {
@@ -995,7 +995,7 @@ async function loadMyPredictions() {
         <div class="match-card" style="margin-bottom:0.5rem">
           <div style="font-size:0.9rem"><strong>${escHtml(homeName)}</strong> vs <strong>${escHtml(awayName)}</strong></div>
           <div style="text-align:center">
-            <div style="font-size:0.8rem;color:var(--gray)">Tu pronóstico: <strong>${predStr}</strong></div>
+            <div style="font-size:0.8rem;color:var(--gray)">Tu pronÃ³stico: <strong>${predStr}</strong></div>
             ${resultStr !== '-' ? `<div style="font-size:0.8rem;color:var(--gray)">Resultado: <strong>${resultStr}</strong></div>` : ''}
             ${ptsBadge}
           </div>
@@ -1004,7 +1004,7 @@ async function loadMyPredictions() {
       `;
     }).join('');
   } catch {
-    container.innerHTML = '<p class="empty-state">Error cargando pronósticos.</p>';
+    container.innerHTML = '<p class="empty-state">Error cargando pronÃ³sticos.</p>';
   }
 }
 
@@ -1024,9 +1024,9 @@ async function loadAdmin() {
       <div class="admin-grid">
         <!-- Stats -->
         <div class="admin-card">
-          <h3>📊 ESTADÍSTICAS</h3>
+          <h3>ð ESTADÃSTICAS</h3>
           <div class="profile-stat"><span>Participantes</span><strong>${stats.total_users}</strong></div>
-          <div class="profile-stat"><span>Pronósticos</span><strong>${stats.total_predictions}</strong></div>
+          <div class="profile-stat"><span>PronÃ³sticos</span><strong>${stats.total_predictions}</strong></div>
           <div class="profile-stat"><span>Partidos jugados</span><strong>${stats.matches_finished}</strong></div>
           <div class="profile-stat"><span>Partidos pendientes</span><strong>${stats.matches_pending}</strong></div>
           <div class="profile-stat"><span>Compras registradas</span><strong>${stats.total_purchases_registered}</strong></div>
@@ -1034,7 +1034,7 @@ async function loadAdmin() {
 
         <!-- Cargar resultado -->
         <div class="admin-card">
-          <h3>⚽ CARGAR RESULTADO</h3>
+          <h3>â½ CARGAR RESULTADO</h3>
           <div class="form-group">
             <label>ID del partido</label>
             <input type="number" id="adminMatchId" placeholder="Ej: 1" />
@@ -1069,14 +1069,14 @@ async function loadAdmin() {
 
         <!-- Puntos por compra -->
         <div class="admin-card">
-          <h3>🛍️ PUNTOS POR COMPRA</h3>
-          <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1rem">Registrá manualmente una compra para otorgar puntos.</p>
+          <h3>ðï¸ PUNTOS POR COMPRA</h3>
+          <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1rem">RegistrÃ¡ manualmente una compra para otorgar puntos.</p>
           <div class="form-group">
             <label>Email del cliente</label>
             <input type="email" id="adminPurchaseEmail" placeholder="cliente@email.com" />
           </div>
           <div class="form-group">
-            <label>Número de orden (opcional)</label>
+            <label>NÃºmero de orden (opcional)</label>
             <input type="text" id="adminOrderId" placeholder="Ej: ORD-12345" />
           </div>
           <div class="form-group">
@@ -1089,8 +1089,8 @@ async function loadAdmin() {
 
         <!-- Bloquear partido -->
         <div class="admin-card">
-          <h3>🔒 BLOQUEAR PARTIDO</h3>
-          <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1rem">Bloqueá las predicciones cuando empiece el partido.</p>
+          <h3>ð BLOQUEAR PARTIDO</h3>
+          <p style="color:var(--gray);font-size:0.85rem;margin-bottom:1rem">BloqueÃ¡ las predicciones cuando empiece el partido.</p>
           <div class="form-group">
             <label>ID del partido</label>
             <input type="number" id="adminLockMatchId" placeholder="Ej: 1" />
@@ -1135,7 +1135,7 @@ async function submitAdminResult() {
   const penalties = document.getElementById('adminPK')?.checked || false;
   const penaltyWinnerId = document.getElementById('adminPKWinnerId')?.value || null;
 
-  if (!matchId) { showAdminMsg('adminResultMsg', 'Ingresá el ID del partido', 'error'); return; }
+  if (!matchId) { showAdminMsg('adminResultMsg', 'IngresÃ¡ el ID del partido', 'error'); return; }
 
   try {
     const res = await apiFetch(`/api/admin/matches/${matchId}/result`, {
@@ -1160,7 +1160,7 @@ async function submitAdminPurchase() {
   const orderId = document.getElementById('adminOrderId').value.trim();
   const amount = document.getElementById('adminOrderAmount').value;
 
-  if (!email) { showAdminMsg('adminPurchaseMsg', 'Ingresá el email', 'error'); return; }
+  if (!email) { showAdminMsg('adminPurchaseMsg', 'IngresÃ¡ el email', 'error'); return; }
 
   try {
     const res = await apiFetch('/api/purchases/grant', {
@@ -1182,7 +1182,7 @@ async function submitAdminPurchase() {
 
 async function submitAdminLock() {
   const matchId = document.getElementById('adminLockMatchId').value;
-  if (!matchId) { showAdminMsg('adminLockMsg', 'Ingresá el ID del partido', 'error'); return; }
+  if (!matchId) { showAdminMsg('adminLockMsg', 'IngresÃ¡ el ID del partido', 'error'); return; }
   try {
     await apiFetch(`/api/admin/matches/${matchId}/lock`, {
       method: 'POST'
@@ -1200,7 +1200,7 @@ async function loadAdminMatches() {
   try {
     const matches = await apiFetch('/api/admin/matches', {}, `Bearer ${currentToken}`);
     if (!matches || matches.length === 0) {
-      container.innerHTML = '<p class="empty-state">No hay partidos cargados aún.</p>';
+      container.innerHTML = '<p class="empty-state">No hay partidos cargados aÃºn.</p>';
       return;
     }
     container.innerHTML = `
@@ -1263,7 +1263,7 @@ async function handleRegister(e) {
     currentToken = data.token;
     currentUser = data.user;
     renderNavAuth();
-    showToast('¡Bienvenido a la Penca TUYA! ⚽', 'success');
+    showToast('Â¡Bienvenido a la Penca TUYA! â½', 'success');
     navigate('fixture');
   } catch (err) {
     errEl.textContent = err.message || 'Error al registrarse';
@@ -1297,10 +1297,10 @@ async function handleLogin(e) {
     currentToken = data.token;
     currentUser = data.user;
     renderNavAuth();
-    showToast('¡Bienvenido de vuelta! ⚽', 'success');
+    showToast('Â¡Bienvenido de vuelta! â½', 'success');
     navigate('fixture');
   } catch (err) {
-    errEl.textContent = err.message || 'Email o contraseña incorrectos';
+    errEl.textContent = err.message || 'Email o contraseÃ±a incorrectos';
     errEl.style.display = 'block';
   } finally {
     btn.textContent = 'ENTRAR';
@@ -1342,18 +1342,31 @@ function escHtml(str) {
 function formatMatchDate(isoStr) {
   try {
     const d = new Date(isoStr);
-    const TZ = 'America/Montevideo';
-    // Date part: "Jue 12 jun"
-    const datePart = d.toLocaleDateString('es-UY', {
-      weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ
-    });
-    // Time part: "19:00"
-    const timePart = d.toLocaleTimeString('es-UY', {
-      hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ
-    });
-    // Capitalize weekday first letter
-    const formatted = datePart.charAt(0).toUpperCase() + datePart.slice(1);
-    return `${formatted} · ${timePart}`;
+    if (isNaN(d.getTime())) return isoStr;
+    // Uruguay is UTC-3 (no DST since 2015) - subtract 3h from UTC for local time
+    const uyu = new Date(d.getTime() - 3 * 60 * 60 * 1000);
+    // Try Intl API with explicit timezone first (more accurate labels)
+    try {
+      const TZ = 'America/Montevideo';
+      const datePart = d.toLocaleDateString('es-UY', {
+        weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ
+      });
+      const timePart = d.toLocaleTimeString('es-UY', {
+        hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ
+      });
+      const formatted = datePart.charAt(0).toUpperCase() + datePart.slice(1);
+      return `${formatted} · ${timePart}`;
+    } catch (_intlErr) {
+      // Fallback: manual UTC-3 offset (Uruguay fixed offset, no DST)
+      const DAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+      const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+      const day = DAYS[uyu.getUTCDay()];
+      const dd = uyu.getUTCDate();
+      const mon = MONTHS[uyu.getUTCMonth()];
+      const hh = String(uyu.getUTCHours()).padStart(2, '0');
+      const min = String(uyu.getUTCMinutes()).padStart(2, '0');
+      return `${day} ${dd} ${mon} · ${hh}:${min}`;
+    }
   } catch { return isoStr; }
 }
 
@@ -1365,7 +1378,7 @@ function formatDate(isoStr) {
 }
 
 function teamFlagHtml(team) {
-  if (!team) return '🏳️';
+  if (!team) return 'ð³ï¸';
   if (team.flag_url) {
     return `<img src="${team.flag_url}" alt="${escHtml(team.name || '')}" class="team-flag-img" onerror="this.replaceWith(document.createTextNode('${teamFlag(team.code)}'))" />`;
   }
@@ -1373,22 +1386,22 @@ function teamFlagHtml(team) {
 }
 
 function teamFlag(code) {
-  if (!code) return '🏳️';
+  if (!code) return 'ð³ï¸';
   const flags = {
-    'USA': '🇺🇸', 'MEX': '🇲🇽', 'PAN': '🇵🇦', 'HON': '🇭🇳',
-    'ARG': '🇦🇷', 'ECU': '🇪🇨', 'VEN': '🇻🇪', 'JAM': '🇯🇲',
-    'FRA': '🇫🇷', 'GER': '🇩🇪', 'POR': '🇵🇹', 'GEO': '🇬🇪',
-    'ESP': '🇪🇸', 'CRO': '🇭🇷', 'SRB': '🇷🇸', 'SVK': '🇸🇰',
-    'BRA': '🇧🇷', 'URU': '🇺🇾', 'COL': '🇨🇴', 'BOL': '🇧🇴',
-    'ENG': '🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'NED': '🇳🇱', 'BEL': '🇧🇪', 'SCO': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
-    'MAR': '🇲🇦', 'SEN': '🇸🇳', 'MLI': '🇲🇱', 'RSA': '🇿🇦',
-    'JPN': '🇯🇵', 'AUS': '🇦🇺', 'KSA': '🇸🇦', 'UZB': '🇺🇿',
-    'TUR': '🇹🇷', 'CZE': '🇨🇿', 'ALB': '🇦🇱', 'POL': '🇵🇱',
-    'ROU': '🇷🇴', 'AUT': '🇦🇹', 'HUN': '🇭🇺', 'KOR': '🇰🇷',
-    'IRN': '🇮🇷', 'IRQ': '🇮🇶', 'OMA': '🇴🇲', 'CAN': '🇨🇦',
-    'CRC': '🇨🇷', 'SLV': '🇸🇻', 'TRI': '🇹🇹'
+    'USA': 'ðºð¸', 'MEX': 'ð²ð½', 'PAN': 'ðµð¦', 'HON': 'ð­ð³',
+    'ARG': 'ð¦ð·', 'ECU': 'ðªð¨', 'VEN': 'ð»ðª', 'JAM': 'ð¯ð²',
+    'FRA': 'ð«ð·', 'GER': 'ð©ðª', 'POR': 'ðµð¹', 'GEO': 'ð¬ðª',
+    'ESP': 'ðªð¸', 'CRO': 'ð­ð·', 'SRB': 'ð·ð¸', 'SVK': 'ð¸ð°',
+    'BRA': 'ð§ð·', 'URU': 'ðºð¾', 'COL': 'ð¨ð´', 'BOL': 'ð§ð´',
+    'ENG': 'ð´ó §ó ¢ó ¥ó ®ó §ó ¿', 'NED': 'ð³ð±', 'BEL': 'ð§ðª', 'SCO': 'ð´ó §ó ¢ó ³ó £ó ´ó ¿',
+    'MAR': 'ð²ð¦', 'SEN': 'ð¸ð³', 'MLI': 'ð²ð±', 'RSA': 'ð¿ð¦',
+    'JPN': 'ð¯ðµ', 'AUS': 'ð¦ðº', 'KSA': 'ð¸ð¦', 'UZB': 'ðºð¿',
+    'TUR': 'ð¹ð·', 'CZE': 'ð¨ð¿', 'ALB': 'ð¦ð±', 'POL': 'ðµð±',
+    'ROU': 'ð·ð´', 'AUT': 'ð¦ð¹', 'HUN': 'ð­ðº', 'KOR': 'ð°ð·',
+    'IRN': 'ð®ð·', 'IRQ': 'ð®ð¶', 'OMA': 'ð´ð²', 'CAN': 'ð¨ð¦',
+    'CRC': 'ð¨ð·', 'SLV': 'ð¸ð»', 'TRI': 'ð¹ð¹'
   };
-  return flags[code] || '🏳️';
+  return flags[code] || 'ð³ï¸';
 }
 
 function showToast(msg, type = '') {
@@ -1534,7 +1547,7 @@ async function loadRivalProfile(username) {
           : 'rpc-revealing';
         const ptsColor = pts >= 7 ? 'var(--green)' : pts >= 3 ? 'var(--orange)' : 'var(--red)';
         const ptsHtml = (m.status === 'finished' && pred) ? `<div class="rpc-pts"><span style="color:${ptsColor};font-weight:700">${pts} pts</span>${rtBadge(rt)}</div>` : '';
-        return `<div class="rival-pred-card ${cardCls}"><div class="rpc-meta">${meta}</div><div class="rpc-teams"><div class="rpc-team">${flagImg(m.home_team)}<span>${hn}</span></div><div class="rpc-center"><div class="rpc-row"><span class="rpc-score">${realScore || '--'}</span><span class="rpc-label">resultado</span></div><div class="rpc-row"><span class="rpc-score">${predScore}</span><span class="rpc-label">pronóstico</span></div>${ptsHtml}</div><div class="rpc-team rpc-team-away">${flagImg(m.away_team)}<span>${an}</span></div></div></div>`;
+        return `<div class="rival-pred-card ${cardCls}"><div class="rpc-meta">${meta}</div><div class="rpc-teams"><div class="rpc-team">${flagImg(m.home_team)}<span>${hn}</span></div><div class="rpc-center"><div class="rpc-row"><span class="rpc-score">${realScore || '--'}</span><span class="rpc-label">resultado</span></div><div class="rpc-row"><span class="rpc-score">${predScore}</span><span class="rpc-label">pronÃ³stico</span></div>${ptsHtml}</div><div class="rpc-team rpc-team-away">${flagImg(m.away_team)}<span>${an}</span></div></div></div>`;
       }
     let html = '';
     if (played.length) { html += '<div class="rpc-section-title">Partidos jugados</div>' + played.map(x => renderCard(x.match, x.pred, 'played')).join(''); }

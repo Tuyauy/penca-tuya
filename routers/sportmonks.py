@@ -480,10 +480,11 @@ def _teams_match(sb_name: str, sm_name: str, sm_code: str) -> bool:
 def _link_unmatched_fixtures(sb) -> None:
     """
     Para cada partido en Supabase sin sportmonks_id, busca el fixture
-    correspondiente en Sportmonks usando fecha + nombre de equipos.
-    Usa paginación (per_page=25) para obtener todos los fixtures de la temporada.
-    Ignora fixtures placeholder (equipos genéricos de eliminatoria).
+    correspondiente en Sportmonks usando nombre de equipos + ventana de tiempo de +/-6h.
+    Si encuentra el fixture con fecha distinta, actualiza tambien el match_date.
     """
+    from datetime import datetime, timedelta, timezone
+
     unlinked_res = sb.table("matches").select(
         "id, match_date, "
         "home_team:teams!matches_home_team_id_fkey(name, code), "
@@ -495,7 +496,7 @@ def _link_unmatched_fixtures(sb) -> None:
         return
     logger.info("Intentando linkear %d partidos sin sportmonks_id", len(unlinked))
 
-    # Fetch todos los fixtures de la temporada con paginación (max 25 por página)
+    # Fetch todos los fixtures de la temporada con paginacion (max 25 por pagina)
     all_season_fixtures = []
     try:
         page = 1
@@ -504,29 +505,26 @@ def _link_unmatched_fixtures(sb) -> None:
                 "/fixtures",
                 {
                     "filters": f"fixtureSeasons:{SM_SEASON_ID}",
-                    "include": "participants;state",
-                    "per_page": "25",
-                    "page": str(page),
-                }
+                    "include": "participants",
+                    "per_page": 25,
+                    "page": page,
+                },
             )
-            page_fixtures = raw_data.get("data") or []
-            all_season_fixtures.extend(page_fixtures)
-            pagination = raw_data.get("pagination") or {}
-            if not pagination.get("has_more", False):
+            fixtures_page = raw_data.get("data") or []
+            all_season_fixtures.extend(fixtures_page)
+            meta = raw_data.get("pagination") or {}
+            if page >= meta.get("last_page", 1):
                 break
             page += 1
-            if page > 20:  # safety cap
-                break
-        logger.info("Sportmonks: %d fixtures totales para temporada %s (%d páginas)", len(all_season_fixtures), SM_SEASON_ID, page)
     except Exception as fetch_err:
         logger.error("Error fetching season fixtures para linking: %s", fetch_err)
         return
 
     if not all_season_fixtures:
-        logger.warning("Linking: Sportmonks no devolvió fixtures para temporada %s", SM_SEASON_ID)
+        logger.warning("Linking: Sportmonks no devolvio fixtures para temporada %s", SM_SEASON_ID)
         return
 
-    # Filtrar placeholders (eliminatoria sin equipos definidos aún)
+    # Filtrar placeholders (eliminatoria sin equipos definidos aun)
     real_fixtures = [
         f for f in all_season_fixtures
         if not f.get("placeholder") and all(
@@ -536,7 +534,7 @@ def _link_unmatched_fixtures(sb) -> None:
     ]
     logger.info("Fixtures reales (no placeholder): %d", len(real_fixtures))
 
-    # Agrupar por fecha
+    # Indexar fixtures de Sportmonks por fecha para busqueda rapida
     sm_by_date: dict = {}
     for rf in real_fixtures:
         starting_at = rf.get("starting_at") or ""
@@ -550,13 +548,33 @@ def _link_unmatched_fixtures(sb) -> None:
         raw_md = match.get("match_date") or ""
         if not raw_md:
             continue
-        date_key = raw_md[:10]
-        candidates = sm_by_date.get(date_key, [])
+
+        # Parse match_date to datetime for +-6h window comparison
+        match_dt = None
+        try:
+            md_str = raw_md.replace(" ", "T").replace("+00", "+00:00")
+            if not md_str.endswith("+00:00") and not md_str.endswith("Z"):
+                md_str += "+00:00"
+            match_dt = datetime.fromisoformat(md_str)
+        except Exception:
+            pass
+
         home_name = (match.get("home_team") or {}).get("name", "")
         away_name = (match.get("away_team") or {}).get("name", "")
 
+        # Collect candidates from exact date + adjacent days (covers timezone shifts)
+        date_key = raw_md[:10]
+        candidate_dates = set([date_key])
+        if match_dt:
+            candidate_dates.add((match_dt - timedelta(days=1)).strftime("%Y-%m-%d"))
+            candidate_dates.add((match_dt + timedelta(days=1)).strftime("%Y-%m-%d"))
+
+        candidates = []
+        for dk in candidate_dates:
+            candidates.extend(sm_by_date.get(dk, []))
+
         if not candidates:
-            not_linked.append(f"{home_name} vs {away_name} (sin fixtures en fecha {date_key})")
+            not_linked.append(f"{home_name} vs {away_name} (sin fixtures en fechas {sorted(candidate_dates)})")
             continue
 
         found = False
@@ -566,27 +584,70 @@ def _link_unmatched_fixtures(sb) -> None:
             away_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "away"), None)
             if not home_sm or not away_sm:
                 continue
+
             home_sm_code = home_sm.get("short_code", "") or ""
             away_sm_code = away_sm.get("short_code", "") or ""
-            if (
+            if not (
                 _teams_match(home_name, home_sm.get("name", ""), home_sm_code)
                 and _teams_match(away_name, away_sm.get("name", ""), away_sm_code)
             ):
-                sm_fixture_id = rf.get("id")
-                sb.table("matches").update({"sportmonks_id": sm_fixture_id}).eq("id", match["id"]).execute()
-                logger.info("Linkeado: %s vs %s → Sportmonks ID %s", home_name, away_name, sm_fixture_id)
-                linked_count += 1
-                found = True
-                break
+                continue
 
-        if not found:
-            not_linked.append(f"{home_name} vs {away_name} (fecha {date_key}, {len(candidates)} candidatos)")
+            # Teams match! Check if within +-6h window
+            sm_starting_at = rf.get("starting_at") or ""
+            within_window = True
+            date_corrected = False
+            if match_dt and sm_starting_at:
+                try:
+                    sm_str = sm_starting_at.replace(" ", "T")
+                    if not sm_str.endswith("+00:00") and not sm_str.endswith("Z"):
+                        sm_str += "+00:00"
+                    sm_dt = datetime.fromisoformat(sm_str)
+                    diff = abs((sm_dt - match_dt).total_seconds())
+                    if diff > 6 * 3600:
+                        within_window = False
+                    elif diff > 60:
+                        date_corrected = True
+                except Exception:
+                    pass
+
+            if not within_window:
+                not_linked.append(
+                    f"{home_name} vs {away_name} (equipos ok pero fechas muy distintas: "
+                    f"supabase={raw_md[:16]}, sm={sm_starting_at[:16]})"
+                )
+                continue
+
+            sm_fixture_id = rf.get("id")
+            update_payload = {"sportmonks_id": sm_fixture_id}
+            if date_corrected:
+                update_payload["match_date"] = sm_starting_at
+                logger.info(
+                    "Linkeado (con correccion de fecha): %s vs %s -> SM ID %s | "
+                    "match_date corregido: %s -> %s",
+                    home_name, away_name, sm_fixture_id, raw_md[:16], sm_starting_at[:16]
+                )
+            else:
+                logger.info(
+                    "Linkeado: %s vs %s -> Sportmonks ID %s",
+                    home_name, away_name, sm_fixture_id
+                )
+
+            sb.table("matches").update(update_payload).eq("id", match["id"]).execute()
+            linked_count += 1
+            found = True
+            break
+
+        if not found and not any(
+            f"{home_name} vs {away_name}" in nl for nl in not_linked
+        ):
+            not_linked.append(f"{home_name} vs {away_name} (fecha {date_key}, {len(candidates)} candidatos sin match de equipos)")
 
     if linked_count:
         logger.info("Linking completado: %d partidos linkeados", linked_count)
-    for nl in not_linked:
-        logger.warning("No se pudo linkear: %s", nl)
-
+    if not_linked:
+        for nl in not_linked:
+            logger.warning("No se pudo linkear: %s", nl)
 
 def _sync_standings_to_db(sb) -> None:
     """

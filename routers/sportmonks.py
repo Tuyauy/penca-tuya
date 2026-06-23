@@ -237,6 +237,7 @@ async def admin_link_fixtures():
 
     try:
         sb = get_supabase()
+        logger.info("sync_live_and_finished: START")
 
         # ── Step 0: list seasons for league 732 ──────────────────────────────
         seasons_info = []
@@ -907,7 +908,7 @@ def sync_live_and_finished():
         _refresh_provisional_totals(sb, [om["id"] for om in our_matches])
 
     except Exception as e:
-        logger.error("sync_live_and_finished error: %s", e)
+        logger.error("sync_live_and_finished CRASHED: %s | type=%s", e, type(e).__name__, exc_info=True)
 
 def _refresh_provisional_totals(sb, match_ids: list):
     """Recalculate provisional_total for all users who have predictions on these matches."""

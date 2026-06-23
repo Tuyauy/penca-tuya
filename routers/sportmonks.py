@@ -496,15 +496,16 @@ def _link_unmatched_fixtures(sb) -> None:
         return
     logger.info("Intentando linkear %d partidos sin sportmonks_id", len(unlinked))
 
-    # Fetch todos los fixtures de la temporada con paginacion (max 25 por pagina)
+    # Fetch todos los fixtures del Mundial usando /between/ (igual que sync_live_and_finished)
+    # fixtureSeasons solo devuelve la fase eliminatoria; /between/ trae los 104 partidos completos
     all_season_fixtures = []
     try:
         page = 1
         while True:
             raw_data = _sm_get(
-                "/fixtures",
+                "/fixtures/between/2026-06-11/2026-07-19",
                 {
-                    "filters": f"fixtureSeasons:{SM_SEASON_ID}",
+                    "filters": f"fixtureLeagues:{SM_LEAGUE_ID}",
                     "include": "participants",
                     "per_page": 25,
                     "page": page,
@@ -513,11 +514,13 @@ def _link_unmatched_fixtures(sb) -> None:
             fixtures_page = raw_data.get("data") or []
             all_season_fixtures.extend(fixtures_page)
             meta = raw_data.get("pagination") or {}
-            if page >= meta.get("last_page", 1):
+            if not meta.get("has_more", False):
                 break
             page += 1
+            if page > 10:
+                break
     except Exception as fetch_err:
-        logger.error("Error fetching season fixtures para linking: %s", fetch_err)
+        logger.error("Error fetching fixtures para linking: %s", fetch_err)
         return
 
     if not all_season_fixtures:

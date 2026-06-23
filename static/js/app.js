@@ -370,7 +370,6 @@ async function loadGroups() {
     'SWE':'🇸🇪','TUN':'🇹🇳','EGY':'🇪🇬','NZL':'🇳🇿','CPV':'🇨🇻','NOR':'🇳🇴','DZA':'🇩🇿',
     'JOR':'🇯🇴','COD':'🇨🇩','GHA':'🇬🇭','ZAF':'🇿🇦','KOR':'🇰🇷','CZE':'🇨🇿','KSA':'🇸🇦',
     'IRQ':'🇮🇶','UZB':'🇺🇿','SCO':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','TUR':'🇹🇷','IRN':'🇮🇷','MAR':'🇲🇦',
-  ,
     'ht':'🇭🇹','HAI':'🇭🇹','py':'🇵🇾','PAR':'🇵🇾','dz':'🇩🇿','ALG':'🇩🇿'
 };
   function getFlag(code) { return extraFlags[code] || teamFlag(code); }

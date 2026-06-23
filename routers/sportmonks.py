@@ -561,7 +561,6 @@ def _link_unmatched_fixtures(sb) -> None:
 
         home_name = (match.get("home_team") or {}).get("name", "")
         away_name = (match.get("away_team") or {}).get("name", "")
-
         # Collect candidates from exact date + adjacent days (covers timezone shifts)
         date_key = raw_md[:10]
         candidate_dates = set([date_key])
@@ -1119,8 +1118,30 @@ async def debug_sm_fixtures():
     call1_fixtures, call1_errors = _paginated_fetch("fixtureLeagues:732")
     call2_fixtures, call2_errors = _paginated_fetch("fixtureSeasons:26618")
 
+    # Call3: endpoint exacto que usa sync_live_and_finished en produccion
+    call3_fixtures = []
+    call3_errors = []
+    try:
+        _pg3 = 1
+        while True:
+            _d3 = _sm_get(
+                "fixtures/between/2026-06-11/2026-07-19",
+                {"filters": f"fixtureLeagues:{SM_LEAGUE_ID}", "include": "participants;scores;state", "per_page": "25", "page": str(_pg3)}
+            )
+            _chunk3 = _d3.get("data") or []
+            call3_fixtures.extend(_chunk3)
+            _pag3 = _d3.get("pagination") or {}
+            if not _pag3.get("has_more", False):
+                break
+            _pg3 += 1
+            if _pg3 > 10:
+                break
+    except Exception as _e3:
+        call3_errors.append(str(_e3))
+
     return {
         "ok": True,
         "call1_fixtureLeagues_732": {**_summarize(call1_fixtures, "fixtureLeagues:732"), "errors": call1_errors},
         "call2_fixtureSeasons_26618": {**_summarize(call2_fixtures, "fixtureSeasons:26618"), "errors": call2_errors},
+        "call3_between_league732": {**_summarize(call3_fixtures, "between/2026-06-11/2026-07-19+fixtureLeagues:732"), "errors": call3_errors},
     }

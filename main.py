@@ -14,7 +14,7 @@ from database import get_supabase, reset_supabase
 
 load_dotenv()
 
-# ── APScheduler for auto-sync ─────────────────────────────────────────────────
+# ── APScheduler for auto-sync ─────────────────────────────────────────────────────────────
 try:
     from apscheduler.schedulers.background import BackgroundScheduler
     _scheduler = BackgroundScheduler(daemon=True)
@@ -41,15 +41,15 @@ app.add_middleware(
 # ── Middleware de reconexión Supabase (Bug1 fix) ──────────────────────────────
 @app.middleware("http")
 async def supabase_reconnect_middleware(request: Request, call_next):
-        """Resetea el cliente Supabase si hay un error de conexión Server disconnected."""
-        try:
-                    response = await call_next(request)
-                    return response
-        except Exception as e:
-                    err_str = str(e)
-                    if "Server disconnected" in err_str or "RemoteProtocol" in err_str:
-                                    reset_supabase()
-                                raise
+    """Resetea el cliente Supabase si hay un error de conexión Server disconnected."""
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as e:
+        err_str = str(e)
+        if "Server disconnected" in err_str or "RemoteProtocol" in err_str:
+            reset_supabase()
+        raise
 
 # Routers
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
@@ -60,15 +60,31 @@ app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(purchases.router, prefix="/api/purchases", tags=["purchases"])
 app.include_router(sportmonks.router, prefix="/api", tags=["sportmonks"])
 
-# ── Startup event: launch APScheduler ────────────────────────────────────────
+# ── Startup event: launch APScheduler ──────────────────────────────────────────
 @app.on_event("startup")
 async def startup_event():
     if _scheduler_enabled and _scheduler:
-        from routers.sportmonks import sync_live_and_finished
-        _scheduler.add_job(sync_live_and_finished, "interval", minutes=2, id="sm_sync", replace_existing=True)
-        _scheduler.start()
+        from routers.sportmonks import sync_live_and_finished, _fix_stale_matches_without_sm_id
+        from database import get_supabase as _get_sb
 
-# Servir JS y CSS sin caché para que los cambios se apliquen siempre
+        # Sync live/finished every 2 min
+        _scheduler.add_job(sync_live_and_finished, "interval", minutes=2, id="sm_sync", replace_existing=True)
+
+        # Fallback: fix stale scheduled matches without sportmonks_id every 15 min
+        def _run_fix_stale():
+            try:
+                sb = _get_sb()
+                fixed = _fix_stale_matches_without_sm_id(sb)
+                if fixed:
+                    import logging
+                    logging.getLogger(__name__).info("fix_stale: %d partidos marcados como pending_review", fixed)
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).error("fix_stale error: %s", _e)
+
+        _scheduler.add_job(_run_fix_stale, "interval", minutes=15, id="fix_stale_sync", replace_existing=True)
+        _scheduler.start()
+# Servir JS y CSS sin cachÃ© para que los cambios se apliquen siempre
 @app.get("/static/js/app.js")
 async def serve_js():
     js_path = Path(__file__).parent / "static" / "js" / "app.js"
@@ -179,7 +195,7 @@ async def serve_logo_full():
         headers={"Cache-Control": "no-cache, no-store, must-revalidate"}
     )
 
-# Servir archivos estáticos (imágenes, etc.)
+# Servir archivos estÃ¡ticos (imÃ¡genes, etc.)
 static_path = Path(__file__).parent / "static"
 if static_path.exists():
     app.mount("/static", StaticFiles(directory=str(static_path)), name="static")

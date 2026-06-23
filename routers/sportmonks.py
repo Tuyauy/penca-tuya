@@ -528,7 +528,7 @@ def _link_unmatched_fixtures(sb) -> None:
     real_fixtures = [
         f for f in all_season_fixtures
         if not f.get("placeholder") and all(
-            not p.get("placeholder") and p.get("short_code")
+            not p.get("placeholder")
             for p in (f.get("participants") or [])
         )
     ]
@@ -604,7 +604,7 @@ def _link_unmatched_fixtures(sb) -> None:
                         sm_str += "+00:00"
                     sm_dt = datetime.fromisoformat(sm_str)
                     diff = abs((sm_dt - match_dt).total_seconds())
-                    if diff > 6 * 3600:
+                    if diff > 24 * 3600:
                         within_window = False
                     elif diff > 60:
                         date_corrected = True

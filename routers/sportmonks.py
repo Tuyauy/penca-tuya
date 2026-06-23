@@ -1125,7 +1125,7 @@ async def debug_sm_fixtures():
         _pg3 = 1
         while True:
             _d3 = _sm_get(
-                "fixtures/between/2026-06-11/2026-07-19",
+                "/fixtures/between/2026-06-11/2026-07-19",
                 {"filters": f"fixtureLeagues:{SM_LEAGUE_ID}", "include": "participants;scores;state", "per_page": "25", "page": str(_pg3)}
             )
             _chunk3 = _d3.get("data") or []

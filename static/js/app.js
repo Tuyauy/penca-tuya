@@ -15,6 +15,8 @@ let selectedKoWinner = null;
 document.addEventListener('DOMContentLoaded', () => {
   loadAuth();
   loadTop3();
+  loadHomeUpcoming();
+  loadHomeCountdown();
 
   // Fixture tab buttons
   document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -89,23 +91,26 @@ function logout() {
 }
 
 // ===== NAVIGATION =====
-function navigate(page) {
+function navigate(page, param) {
   closeMenu();
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.getElementById(`page-${page}`);
   if (target) {
     target.classList.add('active');
+    target.style.removeProperty('display');
     window.scrollTo(0, 0);
     window.location.hash = page;
   }
 
   // Load page data
+  if (page === 'home') { loadHomeUpcoming(); loadHomeCountdown(); }
   if (page === 'fixture') loadFixture(currentPhase);
   if (page === 'ranking') loadRanking();
   if (page === 'groups') loadGroups();
   if (page === 'profile') loadProfile();
   if (page === 'admin') loadAdmin();
   if (page === 'prizes') {} // static
+  if (page === 'rival') loadRivalProfile(param);
 }
 
 function toggleMenu() {
@@ -130,6 +135,178 @@ function adjustScore(id, delta) {
   const next = Math.max(0, current + delta);
   el.dataset.value = next;
   el.textContent = next;
+}
+
+// ===== HOME COUNTDOWN =====
+let _countdownInterval = null;
+let _upcomingMatches = [];
+
+async function loadHomeCountdown() {
+  // Load upcoming matches for countdown
+  try {
+    const data = await apiFetch('/api/matches/upcoming?limit=5');
+    _upcomingMatches = Array.isArray(data) ? data : (data.matches || []);
+  } catch {}
+  _startCountdown();
+}
+
+function _startCountdown() {
+  if (_countdownInterval) clearInterval(_countdownInterval);
+  _tickCountdown();
+  _countdownInterval = setInterval(_tickCountdown, 1000);
+}
+
+function _tickCountdown() {
+  const timerEl   = document.getElementById('countdownTimer');
+  const labelEl   = document.getElementById('countdownLabel');
+  const noteEl    = document.getElementById('countdownNote');
+  const cardEl    = document.getElementById('countdownCard');
+  const matchEl   = document.getElementById('countdownMatchInfo');
+  // Fixture compact elements
+  const fTimerEl  = document.getElementById('fixtureCountdownTimer');
+  const fLabelEl  = document.getElementById('fixtureCountdownLabel');
+  const fMatchEl  = document.getElementById('fixtureCountdownMatch');
+
+  if (!timerEl && !fTimerEl) { clearInterval(_countdownInterval); return; }
+
+  const now = Date.now();
+  const nextMatch = _upcomingMatches.find(m => {
+    if (!m.match_date) return false;
+    if (m.status === 'finished' || m.status === 'live') return false;
+    return new Date(m.match_date).getTime() > now;
+  });
+
+  if (!nextMatch) {
+    const emptyTimer = '<span class="cd-sep">--</span>';
+    if (timerEl) timerEl.innerHTML = emptyTimer;
+    if (fTimerEl) fTimerEl.innerHTML = emptyTimer;
+    if (labelEl) labelEl.textContent = 'Próximo partido';
+    if (noteEl) noteEl.textContent = 'El próximo partido aún no tiene fecha confirmada.';
+    return;
+  }
+
+  const target = new Date(nextMatch.match_date).getTime();
+  const diff = target - now;
+
+  if (diff <= 0) {
+    _upcomingMatches = _upcomingMatches.filter(m => m !== nextMatch);
+    _tickCountdown();
+    return;
+  }
+
+  const totalSecs = Math.floor(diff / 1000);
+  const days  = Math.floor(totalSecs / 86400);
+  const hours = Math.floor((totalSecs % 86400) / 3600).toString().padStart(2, '0');
+  const mins  = Math.floor((totalSecs % 3600) / 60).toString().padStart(2, '0');
+  const secs  = (totalSecs % 60).toString().padStart(2, '0');
+  const sep   = '<span class="cd-sep"> · </span>';
+
+  const timeHtml = days > 0
+    ? `${days}d${sep}${hours}:${mins}:${secs}`
+    : `${hours}:${mins}:${secs}`;
+
+  // Build match info line for home countdown
+  const homeTeam = nextMatch.home_team || {};
+  const awayTeam = nextMatch.away_team || {};
+  const homeName = homeTeam.name || nextMatch.home_team_placeholder || '?';
+  const awayName = awayTeam.name || nextMatch.away_team_placeholder || '?';
+  const homeFlag = teamFlag(homeTeam.code || '');
+  const awayFlag = teamFlag(awayTeam.code || '');
+  const dateStr  = nextMatch.match_date ? formatMatchDate(nextMatch.match_date) : '';
+  const matchInfoHtml = `${homeFlag} ${escHtml(homeName)} <span style="color:var(--celeste);margin:0 0.3em">VS</span> ${escHtml(awayName)} ${awayFlag}<br><small style="color:#aaa">${dateStr}</small>`;
+
+  const isUrgent = diff < 30 * 60 * 1000;
+
+  // ─ Home countdown ─
+  if (timerEl) timerEl.innerHTML = timeHtml;
+
+  const matchInfoEl = document.getElementById('countdownMatchInfo');
+  if (matchInfoEl) matchInfoEl.innerHTML = matchInfoHtml;
+
+  if (isUrgent) {
+    const minsLeft = Math.ceil(diff / 60000);
+    if (labelEl) labelEl.textContent = '⚠️ ¡Último momento!';
+    if (noteEl) { noteEl.textContent = `Cerramos pronósticos en ${minsLeft} minuto${minsLeft !== 1 ? 's' : ''}.`; noteEl.classList.add('urgent'); }
+    if (timerEl) timerEl.classList.add('urgent');
+    if (cardEl)  cardEl.classList.add('urgent');
+  } else {
+    if (labelEl) labelEl.textContent = 'Próximo partido';
+    if (noteEl)  { noteEl.textContent = 'Tenés hasta 30 minutos antes del inicio de cada partido para hacer tu pronóstico.'; noteEl.classList.remove('urgent'); }
+    if (timerEl) timerEl.classList.remove('urgent');
+    if (cardEl)  cardEl.classList.remove('urgent');
+  }
+
+  // ─ Fixture compact countdown ─
+  if (fTimerEl) fTimerEl.innerHTML = timeHtml;
+  if (fLabelEl) fLabelEl.textContent = isUrgent ? '⚠️ Cierra pronto' : 'Próximo partido';
+  if (fMatchEl) fMatchEl.textContent = `${homeFlag} ${homeName} vs ${awayName} ${awayFlag}`;
+  if (fTimerEl) { isUrgent ? fTimerEl.classList.add('urgent') : fTimerEl.classList.remove('urgent'); }
+}
+
+// ===== HOME UPCOMING =====
+async function loadHomeUpcoming() {
+  const container = document.getElementById('homeUpcoming');
+  if (!container) return;
+  try {
+    const token = currentToken ? `Bearer ${currentToken}` : null;
+    const data = await apiFetch('/api/matches/upcoming?limit=3', {}, token);
+    const matches = Array.isArray(data) ? data : (data.matches || []);
+    // Also update _upcomingMatches for countdown if empty
+    if (!_upcomingMatches.length) _upcomingMatches = matches;
+
+    if (!matches.length) {
+      container.innerHTML = '<p class="empty-state">No hay partidos próximos confirmados aún.</p>';
+      return;
+    }
+
+    container.innerHTML = matches.map(m => {
+      const homeTeam = m.home_team || {};
+      const awayTeam = m.away_team || {};
+      const homeName = homeTeam.name || m.home_team_placeholder || '?';
+      const awayName = awayTeam.name || m.away_team_placeholder || '?';
+      const homeFlag = teamFlagHtml(homeTeam);
+      const awayFlag = teamFlagHtml(awayTeam);
+      const dateStr = m.match_date ? formatMatchDate(m.match_date) : 'Fecha a confirmar';
+      const pred = m.user_prediction;
+      const isLocked = m.predictions_locked;
+      // Cierre 30 min antes del partido
+      const matchDateH = m.match_date ? new Date(m.match_date) : null;
+      const isClosed = isLocked || (matchDateH && Date.now() >= matchDateH.getTime() - 30 * 60 * 1000);
+
+      let btnHtml = '';
+      if (!isClosed) {
+        if (currentUser) {
+          const label = pred ? '✏️ Editar pronóstico' : 'Pronosticar';
+          const cls = pred ? 'home-mc-btn' : 'home-mc-btn';
+          btnHtml = `<button class="${cls}" onclick="openPredModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">${label}</button>`;
+        } else {
+          btnHtml = `<button class="home-mc-btn secondary" onclick="navigate('register')">Registrate para pronosticar</button>`;
+        }
+      } else if (isClosed && !isFinished && !isLive) {
+        btnHtml = `<span class="match-closed-badge">🔒 Pronósticos cerrados</span>`;
+      }
+
+      return `<div class="home-match-card">
+        <div class="home-mc-teams">
+          <div class="home-mc-team">
+            <span class="home-mc-flag">${homeFlag}</span>
+            <span class="home-mc-name">${escHtml(homeName)}</span>
+          </div>
+          <span class="home-mc-vs">VS</span>
+          <div class="home-mc-team away">
+            <span class="home-mc-flag">${awayFlag}</span>
+            <span class="home-mc-name">${escHtml(awayName)}</span>
+          </div>
+        </div>
+        <div class="home-mc-date">${dateStr}</div>
+        ${btnHtml}
+      </div>`;
+    }).join('');
+
+  } catch {
+    const container2 = document.getElementById('homeUpcoming');
+    if (container2) container2.innerHTML = '<p class="empty-state">Error cargando partidos.</p>';
+  }
 }
 
 // ===== HOME STATS =====
@@ -173,157 +350,81 @@ async function loadGroups() {
   container.innerHTML = '<div class="loading">Cargando tablas de posiciones...</div>';
 
   const staticGroups = [
-    { group: 'A', teams: [
-      { name: 'México',              code: 'MEX', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Sudáfrica',           code: 'RSA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Rep. de Corea',       code: 'KOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Chequia',             code: 'CZE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'B', teams: [
-      { name: 'Canadá',              code: 'CAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Bosnia y Herzegovina',code: 'BIH', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Catar',               code: 'QAT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Suiza',               code: 'SUI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'C', teams: [
-      { name: 'Brasil',              code: 'BRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Marruecos',           code: 'MAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Haití',               code: 'HAI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Escocia',             code: 'SCO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'D', teams: [
-      { name: 'EE. UU.',             code: 'USA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Paraguay',            code: 'PAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Australia',           code: 'AUS', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Turquía',             code: 'TUR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'E', teams: [
-      { name: 'Alemania',            code: 'GER', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Curazao',             code: 'CUW', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Costa de Marfil',     code: 'CIV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Ecuador',             code: 'ECU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'F', teams: [
-      { name: 'Países Bajos',        code: 'NED', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Japón',               code: 'JPN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Suecia',              code: 'SWE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Túnez',               code: 'TUN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'G', teams: [
-      { name: 'Bélgica',             code: 'BEL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Egipto',              code: 'EGY', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'RI de Irán',          code: 'IRN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Nueva Zelanda',       code: 'NZL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'H', teams: [
-      { name: 'España',              code: 'ESP', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Is. Cabo Verde',      code: 'CPV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Arabia Saudí',        code: 'KSA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Uruguay',             code: 'URU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'I', teams: [
-      { name: 'Francia',             code: 'FRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Senegal',             code: 'SEN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Irak',                code: 'IRQ', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Noruega',             code: 'NOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'J', teams: [
-      { name: 'Argentina',           code: 'ARG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Argelia',             code: 'ALG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Austria',             code: 'AUT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Jordania',            code: 'JOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'K', teams: [
-      { name: 'Portugal',            code: 'POR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'RD Congo',            code: 'COD', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Uzbekistán',          code: 'UZB', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Colombia',            code: 'COL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]},
-    { group: 'L', teams: [
-      { name: 'Inglaterra',          code: 'ENG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Croacia',             code: 'CRO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Ghana',               code: 'GHA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 },
-      { name: 'Panamá',              code: 'PAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }
-    ]}
+    { group: 'A', teams: [ { name: 'México', code: 'MEX', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Sudáfrica', code: 'ZAF', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Rep. de Corea', code: 'KOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Chequia', code: 'CZE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'B', teams: [ { name: 'Canadá', code: 'CAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Bosnia y Herzegovina', code: 'BIH', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Catar', code: 'QAT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Suiza', code: 'SUI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'C', teams: [ { name: 'Brasil', code: 'BRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Marruecos', code: 'MAR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Haití', code: 'HTI', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Escocia', code: 'SCO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'D', teams: [ { name: 'EE. UU.', code: 'USA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Paraguay', code: 'PRY', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Australia', code: 'AUS', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Turquía', code: 'TUR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'E', teams: [ { name: 'Alemania', code: 'GER', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Curazao', code: 'CUW', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Costa de Marfil', code: 'CIV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Ecuador', code: 'ECU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'F', teams: [ { name: 'Países Bajos', code: 'NED', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Japón', code: 'JPN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Suecia', code: 'SWE', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Túnez', code: 'TUN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'G', teams: [ { name: 'Bélgica', code: 'BEL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Egipto', code: 'EGY', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'RI de Irán', code: 'IRN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Nueva Zelanda', code: 'NZL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'H', teams: [ { name: 'España', code: 'ESP', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Is. Cabo Verde', code: 'CPV', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Arabia Saudí', code: 'KSA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Uruguay', code: 'URU', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'I', teams: [ { name: 'Francia', code: 'FRA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Senegal', code: 'SEN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Irak', code: 'IRQ', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Noruega', code: 'NOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'J', teams: [ { name: 'Argentina', code: 'ARG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Argelia', code: 'DZA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Austria', code: 'AUT', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Jordania', code: 'JOR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'K', teams: [ { name: 'Portugal', code: 'POR', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'RD Congo', code: 'COD', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Uzbekistán', code: 'UZB', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Colombia', code: 'COL', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]},
+    { group: 'L', teams: [ { name: 'Inglaterra', code: 'ENG', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Croacia', code: 'CRO', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Ghana', code: 'GHA', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 }, { name: 'Panamá', code: 'PAN', p:0,w:0,d:0,l:0,gf:0,ga:0,pts:0 } ]}
   ];
 
-  // Extra flags for new teams not in the original teamFlag() map
+  // Extra flags for teams not in the main teamFlag() map
   const extraFlags = {
-    'BIH': '🇧🇦', 'QAT': '🇶🇦', 'SUI': '🇨🇭', 'HAI': '🇭🇹',
-    'PAR': '🇵🇾', 'CUW': '🇨🇼', 'CIV': '🇨🇮', 'SWE': '🇸🇪',
-    'TUN': '🇹🇳', 'EGY': '🇪🇬', 'NZL': '🇳🇿', 'CPV': '🇨🇻',
-    'NOR': '🇳🇴', 'ALG': '🇩🇿', 'JOR': '🇯🇴', 'COD': '🇨🇩',
-    'GHA': '🇬🇭'
+    'BIH':'🇧🇦','QAT':'🇶🇦','SUI':'🇨🇭','HTI':'🇭🇹','PRY':'🇵🇾','CUW':'🇨🇼','CIV':'🇨🇮',
+    'SWE':'🇸🇪','TUN':'🇹🇳','EGY':'🇪🇬','NZL':'🇳🇿','CPV':'🇨🇻','NOR':'🇳🇴','DZA':'🇩🇿',
+    'JOR':'🇯🇴','COD':'🇨🇩','GHA':'🇬🇭','ZAF':'🇿🇦','KOR':'🇰🇷','CZE':'🇨🇿','KSA':'🇸🇦',
+    'IRQ':'🇮🇶','UZB':'🇺🇿','SCO':'🏴󠁧󠁢󠁳󠁣󠁴󠁿','TUR':'🇹🇷','IRN':'🇮🇷','MAR':'🇲🇦',
   };
-
-  function getFlag(code) {
-    if (extraFlags[code]) return extraFlags[code];
-    return teamFlag(code);
-  }
-
-  let groups = staticGroups;
-  try {
-    const data = await apiFetch('/api/matches/standings');
-    if (data && data.groups && data.groups.length > 0) {
-      groups = data.groups;
-    }
-  } catch (e) {
-    // Use static fallback
-  }
+  function getFlag(code) { return extraFlags[code] || teamFlag(code); }
 
   function renderGroupTable(groupData) {
-    const rows = groupData.teams.map((t) => {
+    const rows = groupData.teams.map(t => {
       const gd = (t.gf || 0) - (t.ga || 0);
-      const flag = getFlag(t.code);
       return `<tr>
-        <td class="standings-flag">${flag}</td>
+        <td class="standings-flag">${getFlag(t.code)}</td>
         <td class="standings-team">${escHtml(t.name)}</td>
-        <td>${t.p || 0}</td>
-        <td>${t.w || 0}</td>
-        <td>${t.d || 0}</td>
-        <td>${t.l || 0}</td>
-        <td>${t.gf || 0}</td>
-        <td>${t.ga || 0}</td>
-        <td>${gd >= 0 ? '+' + gd : gd}</td>
-        <td class="standings-pts">${t.pts || 0}</td>
+        <td>${t.p||0}</td><td>${t.w||0}</td><td>${t.d||0}</td><td>${t.l||0}</td>
+        <td>${t.gf||0}</td><td>${t.ga||0}</td>
+        <td>${gd>=0?'+'+gd:gd}</td>
+        <td class="standings-pts">${t.pts||0}</td>
       </tr>`;
     }).join('');
     return `<div class="group-standings-card">
       <div class="group-label">Grupo ${groupData.group}</div>
       <table class="standings-table">
         <colgroup>
-          <col class="col-flag" />
-          <col class="col-name" />
-          <col class="col-num" /><col class="col-num" /><col class="col-num" /><col class="col-num" />
-          <col class="col-num" /><col class="col-num" /><col class="col-num" />
-          <col class="col-pts" />
+          <col class="col-flag"/><col class="col-name"/>
+          <col class="col-num"/><col class="col-num"/><col class="col-num"/><col class="col-num"/>
+          <col class="col-num"/><col class="col-num"/><col class="col-num"/><col class="col-pts"/>
         </colgroup>
-        <thead>
-          <tr>
-            <th></th>
-            <th class="col-name-header">Equipo</th>
-            <th>PJ</th>
-            <th>G</th>
-            <th>E</th>
-            <th>P</th>
-            <th>GF</th>
-            <th>GC</th>
-            <th>DG</th>
-            <th>Pts</th>
-          </tr>
-        </thead>
+        <thead><tr><th></th><th class="col-name-header">Equipo</th>
+          <th>PJ</th><th>G</th><th>E</th><th>P</th>
+          <th>GF</th><th>GC</th><th>DG</th><th>Pts</th>
+        </tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>`;
   }
 
-  const html = `
-    <div class="groups-grid">
-      ${groups.map(g => renderGroupTable(g)).join('')}
-    </div>
-  `;
-  container.innerHTML = html;
+  // Try live standings first, fall back to static
+  let groups = staticGroups;
+  try {
+    const data = await apiFetch('/api/standings');
+    if (data && data.groups && data.groups.length >= 12 &&
+        data.groups[0].teams && data.groups[0].teams.length === 4 &&
+        data.groups[0].teams[0].name && data.groups[0].teams[0].name !== '?') {
+      // Map SM codes/names to display — use SM names directly, match flag by code
+      groups = data.groups.map(g => ({
+        group: g.group,
+        teams: g.teams.map(t => ({
+          name: t.name,
+          code: t.code,
+          p: t.p || 0, w: t.w || 0, d: t.d || 0, l: t.l || 0,
+          gf: t.gf || 0, ga: t.ga || 0, pts: t.pts || 0,
+        }))
+      }));
+    }
+  } catch (_) { /* fallback to staticGroups */ }
+
+  container.innerHTML = `<div class="groups-grid">${groups.map(g => renderGroupTable(g)).join('')}</div>`;
 }
+
 
 // ===== FIXTURE =====
 async function loadFixture(phase) {
@@ -393,8 +494,10 @@ function renderMatchList(matches, phase) {
 function renderMatchCard(m, phase) {
   const homeTeam = m.home_team || {};
   const awayTeam = m.away_team || {};
-  const homeName = homeTeam.name || m.home_team_placeholder || '?';
-  const awayName = awayTeam.name || m.away_team_placeholder || '?';
+  // For KO matches with placeholder teams, show "Por definir"
+  const isPlaceholderTeam = (team, placeholder) => !team.name && (!placeholder || /^(Winner|1st|2nd|3rd|Group)/.test(placeholder));
+  const homeName = homeTeam.name || (isPlaceholderTeam(homeTeam, m.home_team_placeholder) ? 'Por definir' : m.home_team_placeholder || '?');
+  const awayName = awayTeam.name || (isPlaceholderTeam(awayTeam, m.away_team_placeholder) ? 'Por definir' : m.away_team_placeholder || '?');
   const homeFlag = teamFlagHtml(homeTeam);
   const awayFlag = teamFlagHtml(awayTeam);
 
@@ -402,6 +505,9 @@ function renderMatchCard(m, phase) {
   const isFinished = m.status === 'finished';
   const isLive = m.status === 'live';
   const isLocked = m.predictions_locked;
+  // Cierre 30 min antes del partido
+  const matchDateF = m.match_date ? new Date(m.match_date) : null;
+  const isClosed = isLocked || (matchDateF && Date.now() >= matchDateF.getTime() - 30 * 60 * 1000);
 
   // Date + venue
   const dateStr = m.match_date ? formatMatchDate(m.match_date) : 'Fecha a confirmar';
@@ -426,6 +532,14 @@ function renderMatchCard(m, phase) {
   } else if (isLive) {
     homeScoreDisplay = `<span class="mc-score-num live">${m.home_score ?? '?'}</span>`;
     awayScoreDisplay = `<span class="mc-score-num live">${m.away_score ?? '?'}</span>`;
+    // Show provisional points if we have a prediction and real scores
+    if (pred && m.home_score != null && m.away_score != null) {
+      const prov = pred.provisional_points;
+      if (prov != null) {
+        const provLabel = prov === 10 ? '🎯 Exacto' : prov === 7 ? '✅ Empate OK' : prov === 5 ? '↔️ Diferencia' : prov === 3 ? '👍 Ganador' : '❌ Sin puntos';
+        predResultHtml = `<div class="mc-pred-badge pts-prov">⏱️ En vivo: ${provLabel} <strong>${prov} pts provisorios</strong></div>`;
+      }
+    }
   } else {
     // Upcoming: show user's predicted scores or "?"
     if (pred) {
@@ -440,7 +554,7 @@ function renderMatchCard(m, phase) {
   // VS / live / result separator
   let centerSep;
   if (isLive) {
-    centerSep = `<span class="mc-vs live-dot">🔴</span>`;
+    centerSep = `<span class="mc-vs live-dot">🔴 EN VIVO</span>`;
   } else if (isFinished) {
     centerSep = `<span class="mc-vs finished">-</span>`;
   } else {
@@ -449,12 +563,15 @@ function renderMatchCard(m, phase) {
 
   // Action button
   let actionHtml = '';
-  if (!isLocked && !isFinished && !isLive && currentUser) {
+  if (!isClosed && !isFinished && !isLive && currentUser) {
     const btnLabel = pred ? '✏️ Editar' : 'Pronosticar';
     const btnClass = pred ? 'mc-btn predicted' : 'mc-btn';
     actionHtml = `<button class="${btnClass}" onclick="openPredModal(${JSON.stringify(m).replace(/"/g, '&quot;')})">${btnLabel}</button>`;
-  } else if (!currentUser && !isFinished && !isLocked && !isLive) {
+  } else if (!currentUser && !isFinished && !isClosed && !isLive) {
     actionHtml = `<button class="mc-btn" onclick="navigate('register')">Registrate para pronosticar</button>`;
+  
+  } else if (isClosed && !isFinished && !isLive) {
+    actionHtml = `<span class="match-closed-badge">🔒 Pronósticos cerrados</span>`;
   }
 
   // ET/PK note for finished KO matches
@@ -671,7 +788,7 @@ async function loadRanking() {
 
   try {
     const token = currentToken ? `Bearer ${currentToken}` : null;
-    const data = await apiFetch('/api/ranking/?limit=100', {}, token);
+    const data = await apiFetch('/api/ranking/?limit=500', {}, token);
 
     // User banner
     const banner = document.getElementById('userRankBanner');
@@ -701,12 +818,12 @@ async function loadRanking() {
     const posClass = { 1: 'gold', 2: 'silver', 3: 'bronze' };
 
     const rows = data.ranking.map(u => {
-      const isMe = currentUser && u.id === currentUser.id;
+      const isMe = currentUser && u.username === currentUser.username;
       const pos = u.position;
       const medal = medals[pos] || pos;
       const cls = posClass[pos] || '';
       return `
-        <tr class="${isMe ? 'rank-highlight' : ''}">
+        <tr class="${isMe ? 'my-row' : ''}" data-username="${escHtml(u.username)}" style="cursor:pointer" onclick="navigate('rival', this.dataset.username)" title="Ver pronósticos de ${escHtml(u.username)}">
           <td><span class="rank-pos ${cls}">${medal}</span></td>
           <td>
             <div class="rank-username">${escHtml(u.username)}${isMe ? ' <small style="color:var(--gold)">← vos</small>' : ''}</div>
@@ -714,7 +831,10 @@ async function loadRanking() {
           </td>
           <td style="font-size:0.85rem;color:var(--gold);font-weight:700;text-align:center">${u.exact_results || 0}</td>
           <td>
-            <div class="rank-points">${u.total_points}</div>
+            ${u.provisional_total != null && u.provisional_total !== u.total_points
+              ? `<div class="rank-points">${u.provisional_total} <span style="font-size:0.65rem;color:var(--gray)">⏱️</span></div>`
+              : `<div class="rank-points">${u.total_points}</div>`
+            }
           </td>
         </tr>
       `;
@@ -1209,31 +1329,33 @@ function escHtml(str) {
 }
 
 function formatMatchDate(isoStr) {
-  try {
-    const d = new Date(isoStr);
-    if (isNaN(d.getTime())) return isoStr;
-    const TZ = 'America/Montevideo';
     try {
-      // Try Intl API with explicit timezone (most browsers support this)
-      const datePart = d.toLocaleDateString('es-UY', {
-        weekday: 'short', day: 'numeric', month: 'short', timeZone: TZ
-      });
-      const timePart = d.toLocaleTimeString('es-UY', {
-        hour: '2-digit', minute: '2-digit', hour12: false, timeZone: TZ
-      });
-      const formatted = datePart.charAt(0).toUpperCase() + datePart.slice(1);
-      return formatted + ' · ' + timePart;
-    } catch (_e) {
-      // Fallback: Uruguay is UTC-3, no DST since 2015
-      const uyu = new Date(d.getTime() - 3 * 60 * 60 * 1000);
-      const dd = String(uyu.getUTCDate()).padStart(2, '0');
-      const mm = String(uyu.getUTCMonth() + 1).padStart(2, '0');
-      const hh = String(uyu.getUTCHours()).padStart(2, '0');
-      const mn = String(uyu.getUTCMinutes()).padStart(2, '0');
-      return dd + '/' + mm + ' · ' + hh + ':' + mn;
-    }
-  } catch { return isoStr; }
+        const d = new Date(isoStr);
+        const TZ = 'America/Montevideo';
+        try {
+            const datePart = d.toLocaleDateString('es-UY', {
+                weekday: 'short', day: 'numeric', month: 'short', timezone: TZ
+            });
+            const timePart = d.toLocaleTimeString('es-UY', {
+                hour: '2-digit', minute: '2-digit', hour12: false, timezone: TZ
+            });
+            const formatted = datePart.charAt(0).toUpperCase() + datePart.slice(1);
+            return `${formatted} · ${timePart}`;
+        } catch (_intlErr) {
+            // Fallback: manual UTC-3 offset (Uruguay fixed offset, no DST)
+            const DAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+            const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+            const uyu = new Date(d.getTime() - 3 * 3600000);
+            const day = DAYS[uyu.getUTCDay()];
+            const dd = uyu.getUTCDate();
+            const mon = MONTHS[uyu.getUTCMonth()];
+            const hh = String(uyu.getUTCHours()).padStart(2, '0');
+            const min = String(uyu.getUTCMinutes()).padStart(2, '0');
+            return `${day} ${dd} ${mon} · ${hh}:${min}`;
+        }
+    } catch { return isoStr; }
 }
+
 function formatDate(isoStr) {
   try {
     const d = new Date(isoStr);
@@ -1341,5 +1463,87 @@ async function submitResetPassword() {
     errEl.textContent = e.message || 'Error. El link puede haber expirado.';
     btn.disabled = false;
     btn.textContent = 'Cambiar contrasena';
+  }
+}
+
+
+// ===== RIVAL PROFILE =====
+async function loadRivalProfile(username) {
+  if (!username) return;
+  const headerEl = document.getElementById('rivalHeader');
+  const listEl = document.getElementById('rivalPredictions');
+  if (!headerEl || !listEl) return;
+  headerEl.innerHTML = '<div class="loading">Cargando...</div>';
+  listEl.innerHTML = '';
+  try {
+    const [rivalData, allMatchesData] = await Promise.all([
+      apiFetch(`/api/predictions/users/${encodeURIComponent(username)}/predictions`),
+      apiFetch('/api/matches/')
+    ]);
+    const user = rivalData.user || {};
+    const visiblePreds = rivalData.predictions || [];
+    const allMatches = (allMatchesData.phases || []).flatMap(function(p) { return p.matches || []; });
+    headerEl.innerHTML = `<div class="rival-user-info"><h1 class="page-title">${escHtml(user.username || username)}</h1><div class="rival-pts-badge">${user.total_points ?? 0} puntos</div></div>`;
+    const predByMatchId = {};
+    for (const p of visiblePreds) {
+      const m = p.match || p;
+      const mid = m.id || p.match_id;
+      if (mid) predByMatchId[mid] = p;
+    }
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + 30 * 60 * 1000);
+    const played = [], revealing = [];
+    for (const m of allMatches) {
+      const matchDate = new Date(m.match_date);
+      const pred = predByMatchId[m.id];
+      if (m.status === 'finished') { played.push({ match: m, pred }); }
+      else if (matchDate <= cutoff) { revealing.push({ match: m, pred }); }
+        // locked matches not shown
+    }
+    const byDate = (a, b) => new Date(a.match.match_date) - new Date(b.match.match_date);
+    played.sort(byDate); revealing.sort(byDate);
+    function flagImg(team) {
+      if (!team || !team.flag_url) return '';
+      return `<img src="${escHtml(team.flag_url)}" alt="${escHtml(team.name || '')}" class="rival-flag">`;
+    }
+    function tname(team, placeholder) { return (team && (team.name || team.code)) ? escHtml(team.name || team.code) : escHtml(placeholder || '?'); }
+    function rtBadge(rt) {
+      if (!rt) return '';
+      const labels = { exact: 'Exacto', winner: 'Ganador', difference: 'Diferencia', wrong: 'Error' };
+      const clsMap = { exact: 'rtype-exact', winner: 'rtype-winner', difference: 'rtype-diff', wrong: 'rtype-wrong' };
+      return `<span class="rtype-badge ${clsMap[rt] || ''}">${labels[rt] || rt}</span>`;
+    }
+    function renderCard(m, pred, state) {
+      const hn = tname(m.home_team, m.home_team_placeholder);
+      const an = tname(m.away_team, m.away_team_placeholder);
+      const dateStr = m.match_date ? formatMatchDate(m.match_date) : '';
+      const phase = escHtml(m.phase || m.group_name || '');
+      const meta = dateStr + (phase ? ' | ' + phase : '');
+      if (state === 'locked') {
+        return `<div class="rival-pred-card rpc-locked"><div class="rpc-meta">${meta}</div><div class="rpc-teams"><div class="rpc-team">${flagImg(m.home_team)}<span>${hn}</span></div><div class="rpc-vs">vs</div><div class="rpc-team rpc-team-away">${flagImg(m.away_team)}<span>${an}</span></div></div><div class="rpc-locked-msg">Pronostico se revela 30 min antes del partido</div></div>`;
+      }
+        const realScore = (m.status === 'finished' && m.home_score != null) ? (m.home_score + ' - ' + m.away_score) : (state === 'revealing' ? 'En juego' : '');
+        const predH = pred ? (pred.predicted_home_score != null ? pred.predicted_home_score : 0) : 0;
+        const predA = pred ? (pred.predicted_away_score != null ? pred.predicted_away_score : 0) : 0;
+        const predScore = pred ? (predH + ' - ' + predA) : '--';
+        const pts = pred ? (pred.points_earned || 0) : 0;
+        const rt = pred ? pred.result_type : null;
+        const cardCls = m.status === 'finished'
+          ? (rt === 'exact' ? 'rpc-exact' : (rt && rt !== 'wrong') ? 'rpc-hit' : rt === 'wrong' ? 'rpc-miss' : 'rpc-finished')
+          : 'rpc-revealing';
+        const ptsColor = pts >= 7 ? 'var(--green)' : pts >= 3 ? 'var(--orange)' : 'var(--red)';
+        const ptsHtml = (m.status === 'finished' && pred) ? `<div class="rpc-pts"><span style="color:${ptsColor};font-weight:700">${pts} pts</span>${rtBadge(rt)}</div>` : '';
+        return `<div class="rival-pred-card ${cardCls}"><div class="rpc-meta">${meta}</div><div class="rpc-teams"><div class="rpc-team">${flagImg(m.home_team)}<span>${hn}</span></div><div class="rpc-center"><div class="rpc-row"><span class="rpc-score">${realScore || '--'}</span><span class="rpc-label">resultado</span></div><div class="rpc-row"><span class="rpc-score">${predScore}</span><span class="rpc-label">pronóstico</span></div>${ptsHtml}</div><div class="rpc-team rpc-team-away">${flagImg(m.away_team)}<span>${an}</span></div></div></div>`;
+      }
+    let html = '';
+    if (played.length) { html += '<div class="rpc-section-title">Partidos jugados</div>' + played.map(x => renderCard(x.match, x.pred, 'played')).join(''); }
+    if (revealing.length) { html += '<div class="rpc-section-title">Proximos a revelar</div>' + revealing.map(x => renderCard(x.match, x.pred, 'revealing')).join(''); }
+    // locked section removed
+    if (!html) html = '<p class="empty-state">No hay partidos disponibles.</p>';
+    listEl.innerHTML = html;
+  } catch(e) {
+    console.error('loadRivalProfile error:', e);
+    headerEl.innerHTML = '<p class="empty-state">Error cargando el perfil.</p>';
+    listEl.innerHTML = '';
   }
 }

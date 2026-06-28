@@ -10,7 +10,7 @@ from datetime import datetime, timezone, timedelta
 
 router = APIRouter()
 
-KNOCKOUT_PHASES = {'r16', 'qf', 'sf', 'third', 'final'}
+KNOCKOUT_PHASES = {'r16', 'qf', 'sf', 'semi', 'third', 'final'}
 
 
 class PredictionRequest(BaseModel):

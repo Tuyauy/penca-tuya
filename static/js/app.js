@@ -660,8 +660,10 @@ function setupKnockoutListeners() {
 }
 
 function checkKnockoutDraw() {
-  const h = parseInt(document.getElementById('predHomeScore').value) || 0;
-  const a = parseInt(document.getElementById('predAwayScore').value) || 0;
+  const hEl = document.getElementById('predHomeScore');
+  const aEl = document.getElementById('predAwayScore');
+  const h = parseInt(hEl?.dataset?.value ?? hEl?.value) || 0;
+  const a = parseInt(aEl?.dataset?.value ?? aEl?.value) || 0;
   const isDraw = h === a;
   document.getElementById('koResolveSection').style.display = isDraw ? 'block' : 'none';
   if (!isDraw) {

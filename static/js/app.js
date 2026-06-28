@@ -644,9 +644,7 @@ function openPredModal(match) {
 
   if (isKnockout) {
     setupKnockoutListeners();
-    if (pred) {
-      checkKnockoutDraw();
-    }
+    checkKnockoutDraw();
   }
 
   document.getElementById('predError').style.display = 'none';

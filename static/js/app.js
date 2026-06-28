@@ -135,6 +135,7 @@ function adjustScore(id, delta) {
   const next = Math.max(0, current + delta);
   el.dataset.value = next;
   el.textContent = next;
+  if (typeof checkKnockoutDraw === 'function') checkKnockoutDraw();
 }
 
 // ===== HOME COUNTDOWN =====

@@ -724,7 +724,7 @@ def _update_ko_placeholders(sb) -> None:
         page = 1
         while True:
             raw = _sm_get(
-                "/fixtures",
+ "sf", "semi", "third"               "/fixtures",
                 {"filters": f"fixtureSeasons:{SM_SEASON_ID}", "include": "participants;state", "per_page": "25", "page": str(page)}
             )
             chunk = raw.get("data") or []
@@ -746,7 +746,7 @@ def _update_ko_placeholders(sb) -> None:
             return
 
         # Load our KO matches that don't have teams yet
-        ko_phases = ["r16", "qf", "sf", "third", "final"]
+        ko_phases = ["r16", "qf", "sf", "semi", "third", "final"]
         our_ko = sb.table("matches").select("id, sportmonks_id, phase").in_("phase", ko_phases).is_("home_team_id", "null").execute()
         if not (our_ko.data or []):
             return

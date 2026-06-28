@@ -13,15 +13,17 @@ PHASE_ORDER = {
     'r16': 2,
     'qf': 3,
     'sf': 4,
-    'third': 5,
-    'final': 6
+    'semi': 5,
+    'third': 6,
+    'final': 7
 }
 
 PHASE_LABELS = {
     'group': 'Fase de Grupos',
     'r16': 'Dieciseisavos de Final',
-    'qf': 'Cuartos de Final',
-    'sf': 'Semifinales',
+    'qf': 'Octavos de Final',
+    'sf': 'Cuartos de Final',
+    'semi': 'Semifinales',
     'third': 'Tercer y Cuarto Puesto',
     'final': 'Final'
 }

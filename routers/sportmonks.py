@@ -62,7 +62,7 @@ def _sm_get(path: str, params: dict = None) -> dict:
     raise last_exc
 
 # ── Helper: map Sportmonks state to our status ────────────────────────────────
-_LIVE_STATES   = {"LIVE", "HT", "ET", "PEN_LIVE", "AET", "BREAK"}
+_LIVE_STATES   = {"LIVE", "HT", "ET", "PEN_LIVE", "BREAK"}
 _FINISH_STATES = {"FT", "AET", "FT_PEN", "AWARDED", "WO"}
 
 def _sm_state_to_status(state_short: str) -> str:
@@ -80,17 +80,37 @@ def _parse_fixture(f: dict) -> dict:
     home_score = None
     away_score = None
     logger.warning("[DIAG] _parse_fixture id=%s state=%s scores_raw=%s", f.get("id"), (f.get("state") or {}).get("short_name"), str(scores_raw)[:500])
+    has_et_score = False
+    has_pen_score = False
+    home_pen_score = None
+    away_pen_score = None
     if isinstance(scores_raw, list):
         for _sc in scores_raw:
             _sc_type = (_sc.get("type") or {}).get("developer_name", "") if isinstance(_sc.get("type"), dict) else ""
+            _desc = (_sc.get("description") or "").upper()
             _score_obj = _sc.get("score") or {}
             _goals = _score_obj.get("goals")
             _participant = _score_obj.get("participant", "")
-            if _sc.get("type_id") == 1525 or (_sc.get("description") or "").upper() in ("CURRENT", "FT_FINAL", "FT"):
+            # FT/90min score (regular time result - type_id 1525 or description FT)
+            if _sc.get("type_id") == 1525 or _desc in ("CURRENT", "FT_FINAL", "FT"):
                 if _participant == "home" and _goals is not None:
                     home_score = _goals
                 elif _participant == "away" and _goals is not None:
                     away_score = _goals
+            # Extra time score (updates home_score/away_score to ET result)
+            elif _desc in ("ET", "AET", "EXTRA_TIME", "2ET") or _sc.get("type_id") in (1518, 1519):
+                has_et_score = True
+                if _participant == "home" and _goals is not None:
+                    home_score = _goals
+                elif _participant == "away" and _goals is not None:
+                    away_score = _goals
+            # Penalty shootout score
+            elif _desc in ("PEN", "PENALTIES", "PENALTY", "FT_PEN") or _sc.get("type_id") in (1520,):
+                has_pen_score = True
+                if _participant == "home" and _goals is not None:
+                    home_pen_score = _goals
+                elif _participant == "away" and _goals is not None:
+                    away_pen_score = _goals
     elif isinstance(scores_raw, dict) and scores_raw:
         home_score = scores_raw.get("localteam_score") if scores_raw.get("localteam_score") is not None else scores_raw.get("home_score")
         away_score = scores_raw.get("visitorteam_score") if scores_raw.get("visitorteam_score") is not None else scores_raw.get("away_score")
@@ -98,6 +118,18 @@ def _parse_fixture(f: dict) -> dict:
     participants = f.get("participants") or []
     home_team_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "home"), None)
     away_team_sm = next((p for p in participants if (p.get("meta") or {}).get("location") == "away"), None)
+
+    # Determine extra_time and penalties flags from state_short and score data
+    _state_upper = state.upper()
+    sm_extra_time = has_et_score or _state_upper in ("AET", "ET", "PEN_LIVE", "FT_PEN")
+    sm_penalties = has_pen_score or _state_upper in ("PEN_LIVE", "FT_PEN")
+    # Determine penalty winner SM team ID if available
+    sm_penalty_winner_sm_id = None
+    if sm_penalties and home_pen_score is not None and away_pen_score is not None:
+        if home_pen_score > away_pen_score:
+            sm_penalty_winner_sm_id = (home_team_sm or {}).get("id")
+        elif away_pen_score > home_pen_score:
+            sm_penalty_winner_sm_id = (away_team_sm or {}).get("id")
 
     return {
         "sportmonks_id": f.get("id"),
@@ -107,6 +139,11 @@ def _parse_fixture(f: dict) -> dict:
         "away_team_sm_id": (away_team_sm or {}).get("id"),
         "home_score": home_score,
         "away_score": away_score,
+        "home_pen_score": home_pen_score,
+        "away_pen_score": away_pen_score,
+        "extra_time": sm_extra_time,
+        "penalties": sm_penalties,
+        "penalty_winner_sm_id": sm_penalty_winner_sm_id,
         "status": _sm_state_to_status(state),
         "state_short": state,
         "minute": f.get("minute"),
@@ -811,17 +848,28 @@ def sync_live_and_finished():
                         if not _p:
                             continue
                         if _p.get("status") in ("finished",) and _p.get("home_score") is not None:
-                            sb.table("matches").update({
+                            # For orphan rescue, also save ET/penalties info
+                            _orp_payload = {
                                 "home_score": _p["home_score"],
                                 "away_score": _p["away_score"],
                                 "status": "finished",
                                 "predictions_locked": True,
-                            }).eq("id", _om["id"]).execute()
+                            }
+                            if _p.get("extra_time") is not None:
+                                _orp_payload["extra_time"] = _p["extra_time"]
+                            if _p.get("penalties") is not None:
+                                _orp_payload["penalties"] = _p["penalties"]
+                            if _p.get("penalty_winner_sm_id"):
+                                if _p["penalty_winner_sm_id"] == _p.get("home_team_sm_id"):
+                                    _orp_payload["penalty_winner_id"] = _om.get("home_team_id")
+                                elif _p["penalty_winner_sm_id"] == _p.get("away_team_sm_id"):
+                                    _orp_payload["penalty_winner_id"] = _om.get("away_team_id")
+                            sb.table("matches").update(_orp_payload).eq("id", _om["id"]).execute()
                             try:
                                 sb.rpc("calculate_match_points", {"match_id_param": _om["id"]}).execute()
                             except Exception:
                                 pass
-                            logger.info("Orphan rescued finished: match_id=%s sm=%s %s-%s", _om["id"], _sm_id, _p["home_score"], _p["away_score"])
+                            logger.info("Orphan rescued finished: match_id=%s sm=%s %s-%s ET=%s PEN=%s", _om["id"], _sm_id, _p["home_score"], _p["away_score"], _p.get("extra_time"), _p.get("penalties"))
                         elif _p.get("status") == "live" and _p.get("home_score") is not None:
                             sb.table("matches").update({
                                 "home_score": _p["home_score"],
@@ -943,17 +991,55 @@ def sync_live_and_finished():
             elif sm["status"] == "finished" and om.get("status") != "finished":
                 if sm["home_score"] is None or sm["away_score"] is None:
                     continue
-                sb.table("matches").update({
-                    "home_score": sm["home_score"],
-                    "away_score": sm["away_score"],
-                    "status": "finished",
-                    "predictions_locked": True,
-                }).eq("id", match_id).execute()
-                # Calculate final points
-                try:
-                    sb.rpc("calculate_match_points", {"match_id_param": match_id}).execute()
-                except Exception as calc_e:
-                    logger.error("calculate_match_points failed for match %s: %s", match_id, calc_e)
+                # Bug fix: "FT" in KO phase with a tie means end of 90min, ET still to come.
+                # Only close as finished when state is truly final: FT_PEN, AET, or FT with a winner.
+                _ko_phases = {"r16", "qf", "semi", "sf", "final", "third"}
+                _is_ko = (om.get("phase") or "").lower() in _ko_phases
+                _state = sm.get("state_short", "")
+                if _is_ko and _state == "FT" and sm["home_score"] == sm["away_score"]:
+                    # Regulation ended in a draw in KO → ET is pending, keep as live
+                    logger.info(
+                        "sync: KO tie at FT for match %s (%s-%s), keeping as live for ET",
+                        match_id, sm["home_score"], sm["away_score"]
+                    )
+                    if om.get("status") != "live":
+                        sb.table("matches").update({
+                            "status": "live",
+                            "predictions_locked": True,
+                            "home_score": sm["home_score"],
+                            "away_score": sm["away_score"],
+                        }).eq("id", match_id).execute()
+                else:
+                    # Truly finished: FT with a winner, AET, or FT_PEN
+                    # Resolve penalty_winner_id from SM team IDs → our DB team IDs
+                    _pen_winner_id = None
+                    if sm.get("penalty_winner_sm_id"):
+                        if sm["penalty_winner_sm_id"] == sm.get("home_team_sm_id"):
+                            _pen_winner_id = om.get("home_team_id")
+                        elif sm["penalty_winner_sm_id"] == sm.get("away_team_sm_id"):
+                            _pen_winner_id = om.get("away_team_id")
+                    _update_payload = {
+                        "home_score": sm["home_score"],
+                        "away_score": sm["away_score"],
+                        "status": "finished",
+                        "predictions_locked": True,
+                    }
+                    if sm.get("extra_time") is not None:
+                        _update_payload["extra_time"] = sm["extra_time"]
+                    if sm.get("penalties") is not None:
+                        _update_payload["penalties"] = sm["penalties"]
+                    if _pen_winner_id is not None:
+                        _update_payload["penalty_winner_id"] = _pen_winner_id
+                    logger.info(
+                        "sync: closing match %s as finished (state=%s ET=%s PEN=%s pen_winner=%s)",
+                        match_id, _state, sm.get("extra_time"), sm.get("penalties"), _pen_winner_id
+                    )
+                    sb.table("matches").update(_update_payload).eq("id", match_id).execute()
+                    # Calculate final points
+                    try:
+                        sb.rpc("calculate_match_points", {"match_id_param": match_id}).execute()
+                    except Exception as calc_e:
+                        logger.error("calculate_match_points failed for match %s: %s", match_id, calc_e)
 
         # ── After a group match finishes: sync standings + KO placeholders ──
         if sm["status"] == "finished" and om.get("status") != "finished":

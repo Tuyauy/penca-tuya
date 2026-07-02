@@ -1,5 +1,7 @@
 """
-feat: add /admin/fix-qf-dates endpoint to fetch+update QF match_dates from Sportmonksimport os
+Sportmonks API integration — live scores, standings, auto-sync
+"""
+import os
 import time
 import logging
 from typing import Optional

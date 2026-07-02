@@ -1,6 +1,5 @@
 """
-fix: use logger.warning in _update_ko_placeholders for Railway log visibility"""
-import os
+feat: add /admin/fix-qf-dates endpoint to fetch+update QF match_dates from Sportmonksimport os
 import time
 import logging
 from typing import Optional
@@ -1240,3 +1239,41 @@ async def debug_sm_fixtures():
         "call2_fixtureSeasons_26618": {**_summarize(call2_fixtures, "fixtureSeasons:26618"), "errors": call2_errors},
         "call3_between_league732": {**_summarize(call3_fixtures, "between/2026-06-11/2026-07-19+fixtureLeagues:732"), "errors": call3_errors},
     }
+
+
+# ── QF date fix endpoint ──────────────────────────────────────────────────────
+QF_SM_IDS = [19606967, 19606968, 19606966, 19606965, 19606964, 19606961, 19606963, 19606962]
+
+@router.get("/admin/fix-qf-dates")
+async def fix_qf_dates():
+    """
+    Fetch real starting_at from Sportmonks for the 8 QF fixtures,
+    compare with current match_date in DB, and update if different.
+    Returns a report of changes.
+    """
+    if not SM_API_KEY:
+        return {"error": "No SM_API_KEY"}
+    sb = get_supabase()
+    report = []
+    for sm_id in QF_SM_IDS:
+        try:
+            raw = _sm_get(f"/fixtures/{sm_id}", {"include": "participants"})
+            fx = raw.get("data") or {}
+            starting_at = fx.get("starting_at")
+            name = fx.get("name", str(sm_id))
+            # Get current match_date in DB
+            res = sb.table("matches").select("id,match_date,sportmonks_id").eq("sportmonks_id", sm_id).execute()
+            rows = res.data or []
+            if not rows:
+                report.append({"sm_id": sm_id, "name": name, "status": "not_in_db", "starting_at": starting_at})
+                continue
+            row = rows[0]
+            current = row.get("match_date")
+            if starting_at and starting_at != current:
+                sb.table("matches").update({"match_date": starting_at}).eq("id", row["id"]).execute()
+                report.append({"sm_id": sm_id, "name": name, "match_id": row["id"], "status": "updated", "old": current, "new": starting_at})
+            else:
+                report.append({"sm_id": sm_id, "name": name, "match_id": row["id"], "status": "ok", "match_date": current, "sm_starting_at": starting_at})
+        except Exception as e:
+            report.append({"sm_id": sm_id, "status": "error", "error": str(e)})
+    return {"report": report}

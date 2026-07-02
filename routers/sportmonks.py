@@ -763,7 +763,7 @@ def _update_ko_placeholders() -> None:
         page = 1
         while True:
             raw = _sm_get(
- "sf", "semi", "third"               "/fixtures",
+                "/fixtures",
                 {"filters": f"fixtureSeasons:{SM_SEASON_ID}", "include": "participants;state", "per_page": "25", "page": str(page)}
             )
             chunk = raw.get("data") or []

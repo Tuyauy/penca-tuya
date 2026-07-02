@@ -503,7 +503,7 @@ function renderMatchCard(m, phase) {
   const homeFlag = teamFlagHtml(homeTeam);
   const awayFlag = teamFlagHtml(awayTeam);
 
-  const isKnockout = ['r16','qf','sf','third','final'].includes(phase);
+  const isKnockout = ['r16','qf','sf','semi','third','final'].includes(phase);
   const isFinished = m.status === 'finished';
   const isLive = m.status === 'live';
   const isLocked = m.predictions_locked;
@@ -619,7 +619,7 @@ function openPredModal(match) {
   const awayTeam = match.away_team || {};
   const homeName = homeTeam.name || match.home_team_placeholder || '?';
   const awayName = awayTeam.name || match.away_team_placeholder || '?';
-  const isKnockout = ['r16','qf','sf','third','final'].includes(match.phase);
+  const isKnockout = ['r16','qf','sf','semi','third','final'].includes(match.phase);
 
   document.getElementById('modalTitle').textContent = 'Pronosticá este partido';
   document.getElementById('modalMatchInfo').textContent = match.match_date ? formatMatchDate(match.match_date) : '';
@@ -716,7 +716,7 @@ async function submitPrediction(e) {
   if (!currentUser) { navigate('login'); return; }
 
   const match = currentMatchForPred;
-  const isKnockout = ['r16','qf','sf','third','final'].includes(match.phase);
+  const isKnockout = ['r16','qf','sf','semi','third','final'].includes(match.phase);
   const homeEl = document.getElementById('predHomeScore');
   const awayEl = document.getElementById('predAwayScore');
   const homeScore = parseInt(homeEl.dataset ? homeEl.dataset.value : homeEl.value) || 0;

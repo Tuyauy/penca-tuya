@@ -83,37 +83,6 @@ async def startup_event():
                 logging.getLogger(__name__).error("fix_stale error: %s", _e)
 
         _scheduler.add_job(_run_fix_stale, "interval", minutes=15, id="fix_stale_sync", replace_existing=True)
-        # One-time QF date fix: update match_dates from Sportmonks
-        try:
-            from routers.sportmonks import _sm_get, QF_SM_IDS
-            import logging as _logging
-            _qf_log = _logging.getLogger("startup.qf_fix")
-            _qf_sb = _get_sb()
-            for _sm_id in QF_SM_IDS:
-                try:
-                    _raw = _sm_get(f"/fixtures/{_sm_id}")
-                    _fx = _raw.get("data") or {}
-                    _starting_at = _fx.get("starting_at")
-                    _name = _fx.get("name", str(_sm_id))
-                    if not _starting_at:
-                        _qf_log.warning("[QF-FIX] sm_id=%s no starting_at", _sm_id)
-                        continue
-                    _res = _qf_sb.table("matches").select("id,match_date").eq("sportmonks_id", _sm_id).execute()
-                    _rows = _res.data or []
-                    if not _rows:
-                        _qf_log.warning("[QF-FIX] sm_id=%s not in db", _sm_id)
-                        continue
-                    _row = _rows[0]
-                    _current = _row.get("match_date")
-                    if _starting_at != _current:
-                        _qf_sb.table("matches").update({"match_date": _starting_at}).eq("id", _row["id"]).execute()
-                        _qf_log.warning("[QF-FIX] UPDATED sm=%s %s: %s -> %s", _sm_id, _name, _current, _starting_at)
-                    else:
-                        _qf_log.warning("[QF-FIX] OK sm=%s %s match_date=%s", _sm_id, _name, _current)
-                except Exception as _qe:
-                    _qf_log.warning("[QF-FIX] ERROR sm=%s: %s", _sm_id, _qe)
-        except Exception as _qf_err:
-            import logging as _l; _l.getLogger("startup").warning("[QF-FIX] FAILED: %s", _qf_err)
         _scheduler.start()
 # Servir JS y CSS sin cachÃ© para que los cambios se apliquen siempre
 @app.get("/static/js/app.js")

@@ -750,12 +750,14 @@ def _sync_standings_to_db(sb) -> None:
         logger.error("_sync_standings_to_db error: %s", e)
 
 
-def _update_ko_placeholders(sb) -> None:
+def _update_ko_placeholders() -> None:
     """
     Check Sportmonks for KO fixtures that now have real teams (no longer placeholder).
     Update home_team_id and away_team_id in Supabase matches.
     """
     try:
+        sb = get_supabase()
+        logger.info("_update_ko_placeholders: START")
         # Fetch KO fixtures from SM (non-group stage, may now have real teams)
         all_fixtures = []
         page = 1
@@ -1049,11 +1051,16 @@ def sync_live_and_finished():
                 except Exception as std_e:
                     logger.error("standings sync error: %s", std_e)
                 try:
-                    _update_ko_placeholders(sb)
+                    _update_ko_placeholders()
                 except Exception as ko_e:
                     logger.error("ko placeholder update error: %s", ko_e)
 
 
+        # Always update KO placeholders every cycle (runs even if no matches finished)
+        try:
+            _update_ko_placeholders()
+        except Exception as _ko_e:
+            logger.error("ko placeholder update error (unconditional): %s", _ko_e)
         # ── Rebuild provisional_total for affected users ───────────────────
         _refresh_provisional_totals(sb, [om["id"] for om in our_matches])
 

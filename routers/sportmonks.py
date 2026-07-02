@@ -1,6 +1,5 @@
 """
-Sportmonks API integration — live scores, standings, auto-sync
-"""
+fix: use logger.warning in _update_ko_placeholders for Railway log visibility"""
 import os
 import time
 import logging
@@ -757,7 +756,7 @@ def _update_ko_placeholders() -> None:
     """
     try:
         sb = get_supabase()
-        logger.info("_update_ko_placeholders: START")
+        logger.warning("[KO] _update_ko_placeholders: START (unconditional cycle)")
         # Fetch KO fixtures from SM (non-group stage, may now have real teams)
         all_fixtures = []
         page = 1

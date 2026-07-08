@@ -1282,7 +1282,7 @@ async def fix_qf_dates():
 
 # ── SF (Cuartos) date/venue fix — dry-run by default, apply=1 to write ──────
 SF_SM_IDS = [19606972, 19606970, 19606971, 19606969]
-
+SF_VENUE_CITY = {"Boston Stadium": "Boston", "Miami Stadium": "Miami", "Los Angeles Stadium": "Los Angeles", "Kansas City Stadium": "Kansas City"}
 @router.get("/admin/fix-sf-dates")
 async def fix_sf_dates(apply: str = "0"):
     if not SM_API_KEY:
@@ -1299,6 +1299,7 @@ async def fix_sf_dates(apply: str = "0"):
             starting_at = fx.get("starting_at")
             venue_obj = fx.get("venue") or {}
             venue_name = venue_obj.get("name") or venue_obj.get("city_name")
+            venue_name = SF_VENUE_CITY.get(venue_name, venue_name)
             parts = fx.get("participants") or []
             home_sm = next((p for p in parts if (p.get("meta") or {}).get("location") == "home"), None)
             away_sm = next((p for p in parts if (p.get("meta") or {}).get("location") == "away"), None)

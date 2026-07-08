@@ -1279,3 +1279,56 @@ async def fix_qf_dates():
         except Exception as e:
             report.append({"sm_id": sm_id, "status": "error", "error": str(e)})
     return {"report": report}
+
+# ── SF (Cuartos) date/venue fix — dry-run by default, apply=1 to write ──────
+SF_SM_IDS = [19606972, 19606970, 19606971, 19606969]
+
+@router.get("/admin/fix-sf-dates")
+async def fix_sf_dates(apply: str = "0"):
+    if not SM_API_KEY:
+        return {"error": "No SM_API_KEY"}
+    sb = get_supabase()
+    teams_res = sb.table("teams").select("id, code, name").execute()
+    code_to_id = {t["code"]: t["id"] for t in (teams_res.data or [])}
+    do_apply = apply == "1"
+    report = []
+    for sm_id in SF_SM_IDS:
+        try:
+            raw = _sm_get(f"/fixtures/{sm_id}", {"include": "participants;venue"})
+            fx = raw.get("data") or {}
+            starting_at = fx.get("starting_at")
+            venue_obj = fx.get("venue") or {}
+            venue_name = venue_obj.get("name") or venue_obj.get("city_name")
+            parts = fx.get("participants") or []
+            home_sm = next((p for p in parts if (p.get("meta") or {}).get("location") == "home"), None)
+            away_sm = next((p for p in parts if (p.get("meta") or {}).get("location") == "away"), None)
+            home_code = (home_sm or {}).get("short_code", "")
+            away_code = (away_sm or {}).get("short_code", "")
+            home_id = code_to_id.get(home_code)
+            away_id = code_to_id.get(away_code)
+            res = sb.table("matches").select("id,match_date,home_team_id,away_team_id,venue,sportmonks_id").eq("sportmonks_id", sm_id).execute()
+            rows = res.data or []
+            if not rows:
+                report.append({"sm_id": sm_id, "status": "not_in_db"})
+                continue
+            row = rows[0]
+            upd = {}
+            if starting_at and starting_at != row.get("match_date"):
+                upd["match_date"] = starting_at
+            if venue_name and venue_name != row.get("venue"):
+                upd["venue"] = venue_name
+            if home_id and home_id != row.get("home_team_id"):
+                upd["home_team_id"] = home_id
+            if away_id and away_id != row.get("away_team_id"):
+                upd["away_team_id"] = away_id
+            if do_apply and upd:
+                sb.table("matches").update(upd).eq("id", row["id"]).execute()
+            report.append({
+                "sm_id": sm_id, "match_id": row["id"], "sm_starting_at": starting_at, "sm_venue": venue_name,
+                "sm_home_code": home_code, "sm_away_code": away_code,
+                "current": {"match_date": row.get("match_date"), "home_team_id": row.get("home_team_id"), "away_team_id": row.get("away_team_id"), "venue": row.get("venue")},
+                "proposed_update": upd, "applied": bool(do_apply and upd),
+            })
+        except Exception as e:
+            report.append({"sm_id": sm_id, "status": "error", "error": str(e)})
+    return {"apply": do_apply, "report": report}
